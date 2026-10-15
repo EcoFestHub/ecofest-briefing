@@ -232,6 +232,17 @@ pre.copy { margin: 0; white-space: pre-wrap; font-family: var(--f-body); font-si
 .deck-dots { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .deck-dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 0; background: var(--line); cursor: pointer; }
 .deck-dots button[aria-current="true"] { background: var(--accent); transform: scale(1.3); }
+
+/* PM: briefing editor */
+.bf { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; }
+.bf-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.bf-head h3 { font-family: var(--f-display); font-weight: 500; font-size: calc(20px * var(--s)); margin: 0; }
+.bf-list { display: grid; gap: 10px; }
+.bf-list > .lab { font-size: calc(12px * var(--s)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.bf-row { display: grid; gap: 6px; background: var(--ground); border-radius: 8px; padding: 10px; }
+.bf-row input, .bf-row textarea, .bf-link input { width: 100%; font-size: calc(14px * var(--s)); padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+.bf-link { display: grid; gap: 6px; }
+.bf-link > label { font-size: calc(12px * var(--s)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -790,7 +801,7 @@ function sortList(list, d) {
     : pmSort === 'kind' ? String(KO[a.kind] == null ? 9 : KO[a.kind]) : '';
   return list.slice().sort((x, y) => { const kx = key(x), ky = key(y); return kx < ky ? -1 : kx > ky ? 1 : idx.get(x) - idx.get(y); });
 }
-const pmFold = { held: true, current: true, backlog: true, done: false };
+const pmFold = { brief: true, held: true, current: true, backlog: true, done: false };
 
 /** One editable ask card. opts: okLabel, okToast, dropLabel, ready (tick box instead of a save button), onCancel. */
 function pmEditCard(x, d, opts) {
@@ -931,6 +942,77 @@ function publishReady() {
     e => { updateBatch(); fail(e); });
 }
 
+
+/* ------------------------------------------------ PM: the briefing members see (Where we landed / Key dates / More) */
+let briefs = null;
+let briefsErr = '';
+let briefsLoading = false;
+const briefDraft = {};
+function loadBriefs() {
+  if (briefsLoading) return;
+  briefsLoading = true;
+  call('pmBriefings', [PM_KEY], r => { briefs = r.briefings || []; briefsErr = ''; briefsLoading = false; renderPm(); },
+    e => { briefsLoading = false; briefs = []; briefsErr = (e && e.message) || 'Could not load the briefing.'; renderPm(); });
+}
+function briefCard(b) {
+  const d = briefDraft[b.row] || (briefDraft[b.row] = { link: b.link, landed: b.landed.map(r => r.slice()), dates: b.dates.map(r => r.slice()), more: b.more.map(r => r.slice()) });
+  const redraw = () => renderPm();
+  const list = (title, arr, blank, labels, tall) => {
+    const rows = arr.map((r, i) => {
+      const a = el('input', { value: r[0], placeholder: labels[0], 'aria-label': labels[0] });
+      a.addEventListener('input', () => { r[0] = a.value; });
+      const c = el('textarea', { rows: tall ? 3 : 2, placeholder: labels[1], 'aria-label': labels[1] });
+      c.value = r[1];
+      c.addEventListener('input', () => { r[1] = c.value; });
+      const kids = [a, c];
+      if (labels[2]) {
+        const l = el('input', { value: r[2] || '', placeholder: labels[2], 'aria-label': labels[2], type: 'url' });
+        l.addEventListener('input', () => { r[2] = l.value; });
+        kids.push(l);
+      }
+      kids.push(el('button', { class: 'switch', type: 'button', style: 'justify-self:start', text: 'Remove this line', onclick: () => { arr.splice(i, 1); redraw(); } }));
+      return el('div', { class: 'bf-row' }, kids);
+    });
+    return el('div', { class: 'bf-list' }, [el('span', { class: 'lab', text: title })].concat(rows, [
+      el('button', { class: 'plus', type: 'button', text: '＋  Add a line', onclick: () => { arr.push(blank.slice()); redraw(); } })]));
+  };
+  const link = el('input', { id: 'bflink-' + b.row, type: 'url', placeholder: 'https://…' });
+  link.value = d.link;
+  link.addEventListener('input', () => { d.link = link.value; });
+  const payload = pub => ({ link: d.link, landed: d.landed, dates: d.dates, more: d.more, published: pub });
+  const act = (btn, pub, msg) => {
+    if (busy) return;
+    const was = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    call('pmSaveBriefing', [PM_KEY, b.row, payload(pub)], r => { briefs = r.briefings || []; delete briefDraft[b.row]; renderPm(); toast(msg); },
+      e => { btn.disabled = false; btn.textContent = was; fail(e); });
+  };
+  const save = el('button', { class: 'btn ghost', type: 'button', text: 'Save changes', onclick: e => act(e.currentTarget, undefined, 'Saved. Members still see the published version.') });
+  const pub = b.published
+    ? el('button', { class: 'btn', type: 'button', text: 'Save and keep published', onclick: e => act(e.currentTarget, true, 'Saved. Members see the changes now.') })
+    : el('button', { class: 'btn', type: 'button', text: 'Save and publish to members', onclick: e => act(e.currentTarget, true, 'Published. Members can see it now.') });
+  const back = b.published ? el('button', { class: 'switch', type: 'button', text: 'Take back to draft', onclick: e => act(e.currentTarget, false, 'Taken back to draft. Members no longer see it.') }) : '';
+  return el('div', { class: 'bf' }, [
+    el('div', { class: 'bf-head' }, [el('h3', { text: 'Meeting ' + b.meeting }), el('span', { class: 'chip ' + (b.published ? 'done' : 'query'), text: b.published ? 'Published' : 'Draft, members cannot see it' })]),
+    el('div', { class: 'bf-link' }, [el('label', { for: 'bflink-' + b.row, text: 'Minutes link' }), link]),
+    list('Where we landed', d.landed, ['', ''], ['Topic, e.g. Registration', 'What was decided']),
+    list('Key dates', d.dates, ['', ''], ['Date, e.g. Tue 20 Oct', 'What happens']),
+    list('More', d.more, ['', '', ''], ['Topic', 'A few sentences of detail', 'Link (optional)'], true),
+    el('div', { class: 'acts' }, [pub, save, back]),
+  ]);
+}
+function briefSection() {
+  if (briefs === null) loadBriefs();
+  const drafts = (briefs || []).filter(b => !b.published).length;
+  const kids = [];
+  if (briefs === null) kids.push(el('p', { class: 'none', style: 'margin:0', text: 'Loading the briefing…' }));
+  else if (briefsErr) kids.push(el('div', { class: 'error', role: 'alert', text: briefsErr + ' (If you have just been told this is new, the script may still need redeploying.)' }));
+  else if (!briefs.length) kids.push(el('p', { class: 'none', style: 'margin:0', text: 'No briefings yet. Draft one from the minutes in the sheet (menu: Draft the briefing from the minutes).' }));
+  else kids.push.apply(kids, briefs.map(briefCard));
+  return foldSection('brief', 'Briefing for members', briefs === null ? '…' : drafts, kids,
+    'The key dates, decisions and notes members see at the top of their page. Read it, correct anything, then publish. A draft stays hidden from members.');
+}
+
 function renderPm() {
   const d = data;
   const kids = [el('header', {}, [el('div', { class: 'eyebrow', text: ORG + ' · project-manager view' + (d.me ? ' · ' + d.me : '') }), el('h1', {}, ['Where things ', el('em', { text: 'stand' })])])];
@@ -983,6 +1065,8 @@ function renderPm() {
     });
     kids.push(sc);
   }
+
+  kids.push(briefSection());
 
   // Held back: tick "Ready" on each one once it is checked, then publish the lot in one go.
   const heldKids = [];
