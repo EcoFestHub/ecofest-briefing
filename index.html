@@ -243,6 +243,31 @@ pre.copy { margin: 0; white-space: pre-wrap; font-family: var(--f-body); font-si
 .bf-row input, .bf-row textarea, .bf-link input { width: 100%; font-size: calc(14px * var(--s)); padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
 .bf-link { display: grid; gap: 6px; }
 .bf-link > label { font-size: calc(12px * var(--s)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+
+/* icons */
+.ico { display: inline-flex; vertical-align: middle; line-height: 0; }
+.ico svg { width: 1.3em; height: 1.3em; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.flag .ico svg { width: 1.9em; height: 1.45em; }
+.nav button .ico svg { width: 1.5em; height: 1.5em; }
+.deck-nav button .ico svg { width: 1.5em; height: 1.5em; }
+.toggle button .ico svg { width: 1.35em; height: 1.35em; }
+.tools button .ico svg { width: 1.35em; height: 1.35em; }
+.chip .ico svg { width: 1.15em; height: 1.15em; }
+/* tasks and asks share one colour; asks are lighter */
+.k-grouptask, .k-groupask, .k-individual { --kc: var(--k-gt); }
+.k-groupask .flag { opacity: .55; }
+/* sections: chevron instead of words */
+details.fold > summary::after { content: ""; display: inline-block; width: .55em; height: .55em; border-right: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-135deg); margin: 0 6px 0 0; font-size: calc(16px * var(--s)); }
+details.fold:not([open]) > summary::after { content: ""; transform: rotate(45deg); }
+details.pfold > summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; font-weight: 700; font-size: calc(14px * var(--s)); background: var(--ground); }
+details.pfold > summary::-webkit-details-marker { display: none; }
+details.pfold > summary::after { content: ""; width: .5em; height: .5em; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-135deg); }
+details.pfold:not([open]) > summary::after { transform: rotate(45deg); }
+details.pfold[open] > summary { margin-bottom: 8px; }
+.infobtn { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 2px; border-radius: 50%; justify-self: start; }
+.infobtn[aria-expanded="true"] { background: var(--accent-soft); }
+.infobtn .ico svg { width: 1.5em; height: 1.5em; }
+.ico-label { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -302,7 +327,10 @@ function wsKey() {
   if (!list.length) return '';
   return el('div', { class: 'wskey', 'aria-label': 'Colour key for project areas' }, list.map(w => el('span', {}, [el('i', { style: 'background:' + wsColour(w) }), w])));
 }
-function chip(s) { return el('span', { class: 'chip ' + s, text: t('status_' + s) || s }); }
+function chip(s) {
+  if (s === 'open') { const w = t('status_open') || 'Not yet'; return el('span', { class: 'chip open', 'aria-label': w, title: w }, [ico('hourglass')]); }
+  return el('span', { class: 'chip ' + s, text: t('status_' + s) || s });
+}
 function fail(err) { busy = false; app.prepend(el('div', { class: 'error', role: 'alert', text: (err && err.message) || String(err) })); }
 const BUSY_WORDS = ['Got it, on it…', 'Asking the spreadsheet nicely…', 'Counting seedlings…', 'Watering the tracker…', 'Nearly there…', 'Google is thinking. It does that sometimes…', 'Still going, thanks for waiting…'];
 let busyN = 0, busyEl = null, busyTimer = null;
@@ -364,6 +392,42 @@ function setMe(v) {
   try { const u = new URL(location.href); if (v) u.searchParams.set('p', v); else u.searchParams.delete('p'); history.replaceState(null, '', u); } catch (e) {}
 }
 
+
+/* ------------------------------------------------ icons (line style, drawn here so nothing is fetched) */
+const ICONS = {
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/>',
+  home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  plus: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  sort: '<path d="M8 4v16M4 16l4 4 4-4M16 20V4M12 8l4-4 4 4"/>',
+  list: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  swipe: '<path d="M4 6h16M7 3L4 6l3 3M17 3l3 3-3 3"/><path d="M10 21v-8.5a1.6 1.6 0 0 1 3.2 0V16l3 .6a2 2 0 0 1 1.6 2V21"/>',
+  chevL: '<path d="M15 6l-6 6 6 6"/>',
+  chevR: '<path d="M9 6l6 6-6 6"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.01"/>',
+  pencil: '<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 7.5l3 3"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  hourglass: '<path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/>',
+};
+function person_(cx, r, ul) {
+  const w = r * 1.9;
+  return '<circle cx="' + cx + '" cy="7" r="' + r + '"/><path d="M' + (cx - w) + ' 16a' + w + ' ' + w + ' 0 0 1 ' + (2 * w) + ' 0"/>'
+    + (ul ? '<path d="M' + (cx - w - .4) + ' 20h' + (2 * w + .8) + '" stroke-width="2.6"/>' : '');
+}
+function ico(name, raw) {
+  const s = el('span', { class: 'ico', 'aria-hidden': 'true' });
+  s.innerHTML = '<svg viewBox="0 0 24 24" focusable="false">' + (raw || ICONS[name] || '') + '</svg>';
+  return s;
+}
+ICONS.people = person_(5, 1.6, false) + person_(12, 1.6, false) + person_(19, 1.6, false);
+/** One person (underlined), a task for the group (all three underlined) or an ask for the group (one underlined). */
+function kindIcon(kind) {
+  if (kind === 'individual') return ico('', person_(12, 2.6, true));
+  if (kind === 'grouptask') return ico('', person_(5, 1.6, true) + person_(12, 1.6, true) + person_(19, 1.6, true));
+  return ico('', person_(5, 1.6, false) + person_(12, 1.6, true) + person_(19, 1.6, false));
+}
+
 /* ------------------------------------------------ display settings (day/night, text size) */
 const SIZES = [0.9, 1, 1.15, 1.3, 1.5, 1.75];
 const prefs = { theme: "", size: 1 };
@@ -386,8 +450,8 @@ function drawTools() {
   document.getElementById("tools").replaceChildren(
     el("button", { type: "button", text: "A−", "aria-label": "Smaller text", title: "Smaller text", disabled: i === 0, onclick: () => stepSize(-1) }),
     el("button", { type: "button", text: "A+", "aria-label": "Larger text", title: "Larger text", disabled: i === SIZES.length - 1, onclick: () => stepSize(1) }),
-    el("button", { type: "button", text: isDark() ? "☀ Day" : "☾ Night", "aria-label": isDark() ? "Switch to day mode" : "Switch to night mode", onclick: () => { prefs.theme = isDark() ? "light" : "dark"; applyPrefs(); } }),
-    el("button", { type: "button", text: "▦ Share", "aria-label": "Share this page: show a QR code", title: "Share this page", onclick: openShare })
+    el("button", { type: "button", "aria-label": isDark() ? "Switch to day mode" : "Switch to night mode", title: isDark() ? "Day mode" : "Night mode", onclick: () => { prefs.theme = isDark() ? "light" : "dark"; applyPrefs(); } }, [ico(isDark() ? "sun" : "moon")]),
+    el("button", { type: "button", "aria-label": "Share this page: show a QR code", title: "Share this page", onclick: openShare }, [ico("qr")])
   );
 }
 applyPrefs();
@@ -460,14 +524,14 @@ function openShare() {
 }
 
 /* ------------------------------------------------ one card at a time */
-let deckMode = false;
-try { deckMode = localStorage.getItem(PFX + 'Deck') === '1'; } catch (e) {}
+let deckMode = true;
+try { deckMode = localStorage.getItem(PFX + 'Deck') !== '0'; } catch (e) {}
 let deckIdx = 0;
 function viewToggle() {
   const set = on => { deckMode = on; deckIdx = 0; try { localStorage.setItem(PFX + 'Deck', on ? '1' : '0'); } catch (e) {} renderMember(); };
   return el('div', { class: 'toggle', role: 'group', 'aria-label': 'How to show your asks' }, [
-    el('button', { type: 'button', text: 'List', 'aria-pressed': deckMode ? 'false' : 'true', onclick: () => set(false) }),
-    el('button', { type: 'button', text: 'One at a time', 'aria-pressed': deckMode ? 'true' : 'false', onclick: () => set(true) }),
+    el('button', { type: 'button', 'aria-label': 'List', title: 'List', 'aria-pressed': deckMode ? 'false' : 'true', onclick: () => set(false) }, [ico('list')]),
+    el('button', { type: 'button', 'aria-label': 'One at a time, swipe across', title: 'One at a time', 'aria-pressed': deckMode ? 'true' : 'false', onclick: () => set(true) }, [ico('swipe')]),
   ]);
 }
 function deckView(cards) {
@@ -476,8 +540,8 @@ function deckView(cards) {
   const track = el('div', { class: 'deck-track', tabindex: '0', role: 'group', 'aria-label': 'Your asks, one at a time. Swipe sideways or use the arrow keys.' },
     cards.map(c => el('div', { class: 'deck-slide' }, [c])));
   const count = el('span', { class: 'deck-count', 'aria-live': 'polite' });
-  const prev = el('button', { type: 'button', text: '‹ Back', 'aria-label': 'Previous card', onclick: () => go(deckIdx - 1) });
-  const next = el('button', { type: 'button', text: 'Next ›', 'aria-label': 'Next card', onclick: () => go(deckIdx + 1) });
+  const prev = el('button', { type: 'button', 'aria-label': 'Previous card', title: 'Previous', onclick: () => go(deckIdx - 1) }, [ico('chevL')]);
+  const next = el('button', { type: 'button', 'aria-label': 'Next card', title: 'Next', onclick: () => go(deckIdx + 1) }, [ico('chevR')]);
   const dots = el('div', { class: 'deck-dots' }, cards.map((_, i) => el('button', { type: 'button', 'aria-label': 'Card ' + (i + 1), onclick: () => go(i) })));
   function paint() {
     count.textContent = (deckIdx + 1) + ' of ' + cards.length;
@@ -504,7 +568,6 @@ function deckView(cards) {
   return el('div', { class: 'deck' }, [
     el('div', { class: 'deck-nav' }, [prev, count, next]),
     track,
-    cards.length > 1 ? el('p', { class: 'small deck-hint', text: 'Swipe sideways for the next one' }) : '',
     cards.length > 1 && cards.length <= 14 ? dots : '',
   ]);
 }
@@ -525,8 +588,8 @@ function namePicker() {
 }
 function navBar() {
   return el('nav', { class: 'nav', 'aria-label': 'Pages' }, [
-    el('button', { type: 'button', text: t('nav_asks'), 'aria-current': VIEW === 'my' ? 'page' : false, onclick: () => { VIEW = 'my'; renderMember(); } }),
-    el('button', { type: 'button', text: t('nav_add'), 'aria-current': VIEW === 'add' ? 'page' : false, onclick: () => { VIEW = 'add'; renderMember(); } }),
+    el('button', { type: 'button', 'aria-label': t('nav_asks') || 'My asks', title: t('nav_asks') || 'My asks', 'aria-current': VIEW === 'my' ? 'page' : false, onclick: () => { VIEW = 'my'; renderMember(); } }, [ico('home')]),
+    el('button', { type: 'button', 'aria-label': t('nav_add') || 'Add asks', title: t('nav_add') || 'Add asks', 'aria-current': VIEW === 'add' ? 'page' : false, onclick: () => { VIEW = 'add'; renderMember(); } }, [ico('plus')]),
   ]);
 }
 
@@ -585,7 +648,8 @@ function sortPicker() {
     [['default', 'As listed'], ['due', 'Due date'], ['area', 'Project area'], ['kind', 'Just yours / ask / task']].map(o => el('option', { value: o[0], text: o[1] })));
   sel.value = memSort;
   sel.addEventListener('change', () => { memSort = sel.value; try { localStorage.setItem(PFX + 'MemSort', memSort); } catch (e) {} renderMember(); });
-  return el('label', { class: 'small', for: 'memsort', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, ['Sort by', sel]);
+  sel.setAttribute('aria-label', 'Sort by'); sel.title = 'Sort by';
+  return el('label', { class: 'small', for: 'memsort', title: 'Sort by', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [ico('sort'), sel]);
 }
 function renderPart(me) {
   const mine = sortMine(data.mine);
@@ -602,7 +666,7 @@ function renderPart(me) {
       a.groupAsk && a.by ? ' · ' : '', a.by ? t('by', { by: a.by }) : '',
       a.addedBy ? ((a.groupAsk || a.by) ? ' · ' : '') + t('added_by', { who: a.addedBy }) : '',
     ]);
-    const linkLine = a.link ? el('div', { class: 'ask-link' }, [el('a', { href: a.link, target: '_blank', rel: 'noopener', text: t('open_link', { link: a.linkText || t('link_word') }) })]) : '';
+    const linkLine = a.link ? el('div', { class: 'ask-link' }, [el('a', { href: a.link, target: '_blank', rel: 'noopener', 'aria-label': t('open_link', { link: a.linkText || t('link_word') }), title: t('open_link', { link: a.linkText || t('link_word') }) }, a.linkText ? t('open_link', { link: a.linkText }) : [ico('link')])]) : '';
     let tail;
     const buttons = withQuery => el('div', { class: 'resp' }, [
       el('button', { type: 'button', text: t('btn_done'), onclick: e => send(a.id, 'done', '', e.currentTarget) }),
@@ -637,7 +701,7 @@ function renderPart(me) {
     const hint = a.mode === 'invite' && !a.closed ? [shown(t('hint_invite')), a.joined ? shown(t('hint_invite_count', { joined: a.joined, total: a.total })) : ''].filter(Boolean).join(' ') : '';
     const FLAG = { individual: 'Just yours', groupask: 'Ask for group', grouptask: 'Task for group' };
     return el('div', { class: 'ask k-' + a.kind, style: wsStyle(a.section) }, [
-      el('div', { class: 'flag', text: FLAG[a.kind] || t('kind_' + a.kind) }),
+      el('div', { class: 'flag', title: FLAG[a.kind] || t('kind_' + a.kind), 'aria-label': FLAG[a.kind] || t('kind_' + a.kind) }, [kindIcon(a.kind)]),
       el('div', { class: 'wsname' }, [el('i'), a.section && a.section !== 'Not sure' ? a.section : 'Project area to be confirmed']),
       el('div', { class: 'ask-text' }, [a.text, a.optional ? el('span', { class: 'optional', text: '  ' + t('if_someone') }) : '']),
       meta, linkLine, tail,
@@ -653,8 +717,8 @@ function extras(a) {
   const kids = [];
   if (a.others && a.others.length > 1) {
     kids.push(el('details', {}, [
-      el('summary', { text: t('who_else') + ' (' + a.others.length + ')' }),
-      el('div', { class: 'who-list' }, a.others.map(o => el('span', { class: 'chip ' + o.state, title: t('status_' + o.state) }, [o.name + (o.me ? ' (' + t('who_else_you') + ')' : '') + ' · ' + t('status_' + o.state)]))),
+      el('summary', { 'aria-label': t('who_else'), title: t('who_else') }, [ico('people'), ' ' + a.others.length]),
+      el('div', { class: 'who-list' }, a.others.map(o => el('span', { class: 'chip ' + o.state, title: t('status_' + o.state) }, [o.name + (o.me ? ' (' + t('who_else_you') + ')' : '') + ' · ', o.state === 'open' ? ico('hourglass') : t('status_' + o.state)]))),
     ]));
   }
   if (a.suggested) {
@@ -801,7 +865,7 @@ function sortList(list, d) {
     : pmSort === 'kind' ? String(KO[a.kind] == null ? 9 : KO[a.kind]) : '';
   return list.slice().sort((x, y) => { const kx = key(x), ky = key(y); return kx < ky ? -1 : kx > ky ? 1 : idx.get(x) - idx.get(y); });
 }
-const pmFold = { brief: true, held: true, current: true, backlog: true, done: false };
+const pmFold = { brief: false, held: false, current: false, backlog: false, done: false };
 
 /** One editable ask card. opts: okLabel, okToast, dropLabel, ready (tick box instead of a save button), onCancel. */
 function pmEditCard(x, d, opts) {
@@ -876,10 +940,19 @@ function pmEditCard(x, d, opts) {
 const KIND_PM = { individual: 'One person', groupask: 'Ask for group', grouptask: 'Task for group' };
 
 /** A collapsible section. Open/closed is remembered while the page is open. */
+function helpNote(text) {
+  const p = el('p', { class: 'small', style: 'margin:0;display:none', text: text });
+  const b = el('button', { class: 'infobtn', type: 'button', 'aria-label': 'About this section', title: 'About this section', 'aria-expanded': 'false', onclick: () => {
+    const open = p.style.display === 'none';
+    p.style.display = open ? '' : 'none';
+    b.setAttribute('aria-expanded', open ? 'true' : 'false');
+  } }, [ico('info')]);
+  return el('div', { class: 'stack', style: 'gap:6px' }, [b, p]);
+}
 function foldSection(key, title, count, kids, help) {
   const det = el('details', { class: 'fold', open: pmFold[key] }, [
     el('summary', {}, [el('h2', { text: title }), el('span', { class: 'cnt', text: String(count) })]),
-    el('div', { class: 'fold-body' }, [help ? el('p', { class: 'small', style: 'margin:0', text: help }) : ''].concat(kids)),
+    el('div', { class: 'fold-body' }, [help ? helpNote(help) : ''].concat(kids)),
   ]);
   det.addEventListener('toggle', () => { pmFold[key] = det.open; });
   return det;
@@ -900,8 +973,12 @@ function pmAskCard(a, d) {
         s.note ? el('span', { class: 'nt', text: '“' + s.note + '”' }) : '',
       ])))
     : el('p', { class: 'none', style: 'margin:0', text: 'No one assigned yet.' });
-  const link = a.link ? el('div', { class: 'ask-link' }, [el('a', { href: a.link, target: '_blank', rel: 'noopener', text: a.linkText || 'Link' })]) : '';
-  const acts = [el('button', { class: 'btn ghost', type: 'button', text: 'Edit', onclick: () => { editing[a.id] = true; renderPm(); } })];
+  const doneN = a.states.filter(x => x.status === 'done').length;
+  const peopleFold = a.states.length
+    ? el('details', { class: 'pfold' }, [el('summary', { 'aria-label': 'Who is asked and who has answered', title: 'Who is asked and who has answered' }, [ico('people'), el('span', { text: doneN + '/' + a.states.length })]), people])
+    : people;
+  const link = a.link ? el('div', { class: 'ask-link' }, [el('a', { href: a.link, target: '_blank', rel: 'noopener', 'aria-label': a.linkText || 'Link', title: a.linkText || 'Link' }, a.linkText ? a.linkText : [ico('link')])]) : '';
+  const acts = [el('button', { class: 'btn ghost', type: 'button', 'aria-label': 'Edit', title: 'Edit', onclick: () => { editing[a.id] = true; renderPm(); } }, [ico('pencil')])];
   if (a.mode === 'invite') {
     if (a.enough) acts.push(el('button', { class: 'switch', type: 'button', text: 'Reopen', onclick: () => { if (busy) return; call('pmEnough', [PM_KEY, a.id, false], r => { data = r; renderPm(); toast('Reopened.'); }); } }));
     else if (!a.level) acts.push(el('button', { class: 'btn', type: 'button', text: 'That’s enough', onclick: () => { if (busy) return; call('pmEnough', [PM_KEY, a.id, true], r => { data = r; renderPm(); toast('Marked as enough. It moves to Done.'); }); } }));
@@ -911,13 +988,13 @@ function pmAskCard(a, d) {
     acts.push(el('button', { class: 'btn', type: 'button', disabled: a.onAgenda, text: a.onAgenda ? 'On the agenda (nudge ' + a.nudges + ')' : 'Put on the next agenda', onclick: () => { if (busy) return; call('pmPromote', [PM_KEY, a.id], r => { data = r; renderPm(); toast('Added to the next agenda as a nudge.'); }); } }));
   }
   return el('div', { class: 'ask k-' + a.kind, style: wsStyle(a.section) }, [
-    el('div', { class: 'flag', text: KIND_PM[a.kind] || a.kind }),
+    el('div', { class: 'flag', title: KIND_PM[a.kind] || a.kind, 'aria-label': KIND_PM[a.kind] || a.kind }, [kindIcon(a.kind)]),
     el('div', { class: 'wsname' }, [el('i'), a.section && a.section !== 'Not sure' ? a.section : 'Project area to be confirmed']),
     el('div', { class: 'ask-text', text: a.text }),
     el('div', { class: 'ask-meta', text: ['For ' + a.forText, a.by ? 'by ' + a.by : '', a.raised ? 'raised ' + a.raised : '', a.source].filter(Boolean).join(' · ') }),
     link,
     a.summary ? el('div', { class: 'sum', text: a.summary }) : '',
-    people,
+    peopleFold,
     el('div', { class: 'acts' }, acts),
   ]);
 }
@@ -958,7 +1035,7 @@ const briefEditing = {};
 /** A published briefing as a plain card. Edit brings the form back. */
 function briefReadCard(b) {
   const lines = (arr, withLink) => arr.length
-    ? el('ul', { class: 'gist' }, arr.map(r => el('li', {}, [el('span', { class: 'k', text: r[0] }), el('span', { class: 'v' }, [r[1], withLink && r[2] ? el('span', {}, [' ', el('a', { href: r[2], target: '_blank', rel: 'noopener', text: 'Link' })]) : ''])])))
+    ? el('ul', { class: 'gist' }, arr.map(r => el('li', {}, [el('span', { class: 'k', text: r[0] }), el('span', { class: 'v' }, [r[1], withLink && r[2] ? el('span', {}, [' ', el('a', { href: r[2], target: '_blank', rel: 'noopener', 'aria-label': 'Link', title: 'Link' }, [ico('link')])]) : ''])])))
     : el('p', { class: 'none', style: 'margin:0', text: 'Nothing here.' });
   const sec = (title, arr, withLink) => el('div', { class: 'bf-list' }, [el('span', { class: 'lab', text: title }), lines(arr, withLink)]);
   const back = el('button', { class: 'switch', type: 'button', text: 'Take back to draft', onclick: e => {
@@ -971,7 +1048,7 @@ function briefReadCard(b) {
     el('div', { class: 'bf-head' }, [el('h3', { text: 'Meeting ' + b.meeting }), el('span', { class: 'chip done', text: 'Published' })]),
     b.link ? el('p', { class: 'small', style: 'margin:0' }, [el('a', { href: b.link, target: '_blank', rel: 'noopener', text: 'Minutes' })]) : '',
     sec('Where we landed', b.landed), sec('Key dates', b.dates), sec('More', b.more, true),
-    el('div', { class: 'acts' }, [el('button', { class: 'btn ghost', type: 'button', text: 'Edit', onclick: () => { briefEditing[b.row] = true; renderPm(); } }), back]),
+    el('div', { class: 'acts' }, [el('button', { class: 'btn ghost', type: 'button', 'aria-label': 'Edit', title: 'Edit', onclick: () => { briefEditing[b.row] = true; renderPm(); } }, [ico('pencil')]), back]),
   ]);
 }
 function briefCard(b) {
@@ -1040,8 +1117,8 @@ function renderPm() {
   kids.push(el('div', { class: 'stats' }, [['Done', d.stats.done], ['In progress', d.stats.team], [t('pm_cant_stat'), d.stats.cant], ['With you to check', d.stats.query], ['No answer yet', d.stats.open]]
     .map(([l, n]) => el('div', { class: 'stat' }, [el('b', { text: String(n) }), el('span', { text: l })]))));
   kids.push(el('div', { class: 'stack' }, [
-    el('label', { class: 'small', for: 'pmsort', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, ['Sort each list by',
-      (() => { const sel = el('select', { id: 'pmsort', style: 'font-size:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)' }, SORTS.map(o => el('option', { value: o[0], text: o[1] })));
+    el('label', { class: 'small', for: 'pmsort', title: 'Sort each list by', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [ico('sort'),
+      (() => { const sel = el('select', { id: 'pmsort', 'aria-label': 'Sort each list by', style: 'font-size:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)' }, SORTS.map(o => el('option', { value: o[0], text: o[1] })));
         sel.value = pmSort;
         sel.addEventListener('change', () => { pmSort = sel.value; try { localStorage.setItem(PFX + 'PmSort', pmSort); } catch (e) {} renderPm(); });
         return sel; })()]),
@@ -1091,7 +1168,7 @@ function renderPm() {
   const heldKids = [];
   if (!d.queue.length) heldKids.push(el('p', { class: 'none', style: 'margin:0', text: 'Nothing waiting. Asks appear here when the person adding them ticks “ask a PM to confirm”.' }));
   d.queue.forEach(x => heldKids.push(el('div', { class: 'ask k-' + x.kind, style: wsStyle(x.section) }, [
-    el('div', { class: 'flag', text: 'Held back · ' + (KIND_PM[x.kind] || '') }),
+    el('div', { class: 'flag', title: 'Held back · ' + (KIND_PM[x.kind] || ''), 'aria-label': 'Held back · ' + (KIND_PM[x.kind] || '') }, ['Held back ', kindIcon(x.kind)]),
     pmEditCard(x, d, { ready: true, dropLabel: 'Remove it' }),
   ])));
   kids.push(foldSection('held', 'Held back for you to check', d.queue.length, heldKids, d.queue.length ? 'Correct anything that needs it and tick “Ready” on each one. Then press the button at the bottom once to publish them all.' : ''));
