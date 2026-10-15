@@ -407,8 +407,26 @@ function renderBriefing() {
   app.replaceChildren(...kids);
 }
 
+let memSort = 'default';
+try { memSort = localStorage.getItem(PFX + 'MemSort') || 'default'; } catch (e) {}
+function sortMine(list) {
+  if (memSort === 'default') return list;
+  const idx = new Map(list.map((a, i) => [a, i]));
+  const KO = { grouptask: 0, individual: 1, groupask: 2 };
+  const key = a => memSort === 'due' ? (a.byIso || '9999-99-99')
+    : memSort === 'area' ? String(((data.workstreams || []).indexOf(a.section) + 1 || 999)).padStart(3, '0')
+    : String(KO[a.kind] == null ? 9 : KO[a.kind]);
+  return list.slice().sort((x, y) => { const kx = key(x), ky = key(y); return kx < ky ? -1 : kx > ky ? 1 : idx.get(x) - idx.get(y); });
+}
+function sortPicker() {
+  const sel = el('select', { id: 'memsort', style: 'font-size:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)' },
+    [['default', 'As listed'], ['due', 'Due date'], ['area', 'Project area'], ['kind', 'Just yours / ask / task']].map(o => el('option', { value: o[0], text: o[1] })));
+  sel.value = memSort;
+  sel.addEventListener('change', () => { memSort = sel.value; try { localStorage.setItem(PFX + 'MemSort', memSort); } catch (e) {} renderMember(); });
+  return el('label', { class: 'small', for: 'memsort', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, ['Sort by', sel]);
+}
 function renderPart(me) {
-  const mine = data.mine;
+  const mine = sortMine(data.mine);
   const head = el('div', { class: 'part-head' }, [el('h2', { text: t('h_part') })]);
   if (!mine.length) return el('section', { class: 'part' }, [head, el('p', { class: 'none', style: 'margin:0', text: t('none_for_you') })]);
   const legend = el('div', { class: 'legend' }, [
@@ -416,7 +434,7 @@ function renderPart(me) {
     el('span', { class: 'k-individual' }, [el('i', { class: 'dot' }), t('kind_individual')]),
     el('span', { class: 'k-groupask' }, [el('i', { class: 'dot' }), t('kind_groupask')]),
   ]);
-  return el('section', { class: 'part' }, [head, wsKey(), legend].concat(mine.map(a => {
+  return el('section', { class: 'part' }, [head, wsKey(), sortPicker(), legend].concat(mine.map(a => {
     const meta = el('div', { class: 'ask-meta' }, [
       a.groupAsk ? t('group_ask', { scope: a.scope }) : '',
       a.groupAsk && a.by ? ' · ' : '', a.by ? t('by', { by: a.by }) : '',
