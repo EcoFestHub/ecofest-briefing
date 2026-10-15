@@ -390,11 +390,32 @@ function shareUrl() {
 }
 function openShare() {
   if (document.getElementById('share-modal')) return;
-  const url = shareUrl();
-  let svg = '';
-  try { const q = qrcode(0, 'M'); q.addData(url); q.make(); svg = q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); } catch (e) {}
-  const qrBox = el('div', { class: 'qr', role: 'img', 'aria-label': 'QR code for ' + url });
-  if (svg) qrBox.innerHTML = svg; else qrBox.textContent = 'Could not draw the QR code. Use the link below.';
+  let url = shareUrl();
+  const qrBox = el('div', { class: 'qr', role: 'img', 'aria-label': 'QR code for the link below' });
+  const linkLine = el('p', { class: 'linkline' });
+  const warn = el('p', { class: 'check', style: 'margin:0;display:none' });
+  function drawQr() {
+    let svg = '';
+    try { const q = qrcode(0, 'M'); q.addData(url); q.make(); svg = q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); } catch (e) {}
+    if (svg) qrBox.innerHTML = svg; else qrBox.textContent = 'Could not draw the QR code. Use the link below.';
+    linkLine.textContent = url;
+  }
+  drawQr();
+  // PM pages can also show a code for the PM view itself (carries the private key), to get it onto the PM's own phone.
+  let pmSwitch = '';
+  if (MODE === 'pm' && PM_KEY) {
+    const bM = el('button', { type: 'button', text: 'Members’ briefing', 'aria-pressed': 'true' });
+    const bP = el('button', { type: 'button', text: 'My PM view', 'aria-pressed': 'false' });
+    const pick = priv => {
+      url = priv ? ROOT + 'pm/?pm=' + encodeURIComponent(PM_KEY) : shareUrl();
+      bM.setAttribute('aria-pressed', priv ? 'false' : 'true'); bP.setAttribute('aria-pressed', priv ? 'true' : 'false');
+      warn.textContent = priv ? 'This code contains your private PM key. Scan it with your own phone only, and don’t share or screenshot it.' : '';
+      warn.style.display = priv ? '' : 'none';
+      drawQr();
+    };
+    bM.addEventListener('click', () => pick(false)); bP.addEventListener('click', () => pick(true));
+    pmSwitch = el('div', { class: 'toggle', role: 'group', 'aria-label': 'Which link', style: 'justify-self:center' }, [bM, bP]);
+  }
   const prevFocus = document.activeElement;
   const close = () => { back.remove(); document.removeEventListener('keydown', onKey); if (prevFocus && prevFocus.focus) prevFocus.focus(); };
   const onKey = e => { if (e.key === 'Escape') close(); };
@@ -405,9 +426,11 @@ function openShare() {
   const row = [copyBtn];
   if (navigator.share) row.push(el('button', { class: 'btn ghost', type: 'button', text: 'Share…', onclick: () => { navigator.share({ title: document.title, url: url }).catch(() => {}); } }));
   const box = el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'share-h' }, [
-    el('h2', { id: 'share-h', text: MODE === 'pm' ? 'Share the members’ briefing' : 'Open this on your phone' }),
+    el('h2', { id: 'share-h', text: 'Open this on your phone' }),
+    pmSwitch,
     qrBox,
-    el('p', { class: 'linkline', text: url }),
+    linkLine,
+    warn,
     el('div', { class: 'row' }, row),
     el('div', { class: 'app-note' }, [
       el('strong', { text: 'Want it as an app on your phone?' }),
