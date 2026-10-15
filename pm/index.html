@@ -954,7 +954,28 @@ function loadBriefs() {
   call('pmBriefings', [PM_KEY], r => { briefs = r.briefings || []; briefsErr = ''; briefsLoading = false; renderPm(); },
     e => { briefsLoading = false; briefs = []; briefsErr = (e && e.message) || 'Could not load the briefing.'; renderPm(); });
 }
+const briefEditing = {};
+/** A published briefing as a plain card. Edit brings the form back. */
+function briefReadCard(b) {
+  const lines = (arr, withLink) => arr.length
+    ? el('ul', { class: 'gist' }, arr.map(r => el('li', {}, [el('span', { class: 'k', text: r[0] }), el('span', { class: 'v' }, [r[1], withLink && r[2] ? el('span', {}, [' ', el('a', { href: r[2], target: '_blank', rel: 'noopener', text: 'Link' })]) : ''])])))
+    : el('p', { class: 'none', style: 'margin:0', text: 'Nothing here.' });
+  const sec = (title, arr, withLink) => el('div', { class: 'bf-list' }, [el('span', { class: 'lab', text: title }), lines(arr, withLink)]);
+  const back = el('button', { class: 'switch', type: 'button', text: 'Take back to draft', onclick: e => {
+    if (busy) return;
+    const btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Saving…';
+    call('pmSaveBriefing', [PM_KEY, b.row, { link: b.link, landed: b.landed, dates: b.dates, more: b.more, published: false }], r => { briefs = r.briefings || []; renderPm(); toast('Taken back to draft. Members no longer see it.'); },
+      er => { btn.disabled = false; btn.textContent = 'Take back to draft'; fail(er); });
+  } });
+  return el('div', { class: 'bf' }, [
+    el('div', { class: 'bf-head' }, [el('h3', { text: 'Meeting ' + b.meeting }), el('span', { class: 'chip done', text: 'Published' })]),
+    b.link ? el('p', { class: 'small', style: 'margin:0' }, [el('a', { href: b.link, target: '_blank', rel: 'noopener', text: 'Minutes' })]) : '',
+    sec('Where we landed', b.landed), sec('Key dates', b.dates), sec('More', b.more, true),
+    el('div', { class: 'acts' }, [el('button', { class: 'btn ghost', type: 'button', text: 'Edit', onclick: () => { briefEditing[b.row] = true; renderPm(); } }), back]),
+  ]);
+}
 function briefCard(b) {
+  if (b.published && !briefEditing[b.row]) return briefReadCard(b);
   const d = briefDraft[b.row] || (briefDraft[b.row] = { link: b.link, landed: b.landed.map(r => r.slice()), dates: b.dates.map(r => r.slice()), more: b.more.map(r => r.slice()) });
   const redraw = () => renderPm();
   const list = (title, arr, blank, labels, tall) => {
@@ -984,21 +1005,21 @@ function briefCard(b) {
     if (busy) return;
     const was = btn.textContent;
     btn.disabled = true; btn.textContent = 'Saving…';
-    call('pmSaveBriefing', [PM_KEY, b.row, payload(pub)], r => { briefs = r.briefings || []; delete briefDraft[b.row]; renderPm(); toast(msg); },
+    call('pmSaveBriefing', [PM_KEY, b.row, payload(pub)], r => { briefs = r.briefings || []; delete briefDraft[b.row]; delete briefEditing[b.row]; renderPm(); toast(msg); },
       e => { btn.disabled = false; btn.textContent = was; fail(e); });
   };
   const save = el('button', { class: 'btn ghost', type: 'button', text: 'Save changes', onclick: e => act(e.currentTarget, undefined, 'Saved. Members still see the published version.') });
   const pub = b.published
-    ? el('button', { class: 'btn', type: 'button', text: 'Save and keep published', onclick: e => act(e.currentTarget, true, 'Saved. Members see the changes now.') })
+    ? el('button', { class: 'btn', type: 'button', text: 'Save changes', onclick: e => act(e.currentTarget, true, 'Saved. Members see the changes now.') })
     : el('button', { class: 'btn', type: 'button', text: 'Save and publish to members', onclick: e => act(e.currentTarget, true, 'Published. Members can see it now.') });
-  const back = b.published ? el('button', { class: 'switch', type: 'button', text: 'Take back to draft', onclick: e => act(e.currentTarget, false, 'Taken back to draft. Members no longer see it.') }) : '';
+  const back = b.published ? el('button', { class: 'switch', type: 'button', text: 'Cancel', onclick: () => { delete briefDraft[b.row]; delete briefEditing[b.row]; renderPm(); } }) : '';
   return el('div', { class: 'bf' }, [
     el('div', { class: 'bf-head' }, [el('h3', { text: 'Meeting ' + b.meeting }), el('span', { class: 'chip ' + (b.published ? 'done' : 'query'), text: b.published ? 'Published' : 'Draft, members cannot see it' })]),
     el('div', { class: 'bf-link' }, [el('label', { for: 'bflink-' + b.row, text: 'Minutes link' }), link]),
     list('Where we landed', d.landed, ['', ''], ['Topic, e.g. Registration', 'What was decided']),
     list('Key dates', d.dates, ['', ''], ['Date, e.g. Tue 20 Oct', 'What happens']),
     list('More', d.more, ['', '', ''], ['Topic', 'A few sentences of detail', 'Link (optional)'], true),
-    el('div', { class: 'acts' }, [pub, save, back]),
+    el('div', { class: 'acts' }, b.published ? [pub, back] : [pub, save]),
   ]);
 }
 function briefSection() {
