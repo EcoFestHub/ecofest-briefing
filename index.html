@@ -232,6 +232,17 @@ pre.copy { margin: 0; white-space: pre-wrap; font-family: var(--f-body); font-si
 .deck-dots { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
 .deck-dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 0; background: var(--line); cursor: pointer; }
 .deck-dots button[aria-current="true"] { background: var(--accent); transform: scale(1.3); }
+
+/* PM: briefing editor */
+.bf { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; }
+.bf-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.bf-head h3 { font-family: var(--f-display); font-weight: 500; font-size: calc(20px * var(--s)); margin: 0; }
+.bf-list { display: grid; gap: 10px; }
+.bf-list > .lab { font-size: calc(12px * var(--s)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.bf-row { display: grid; gap: 6px; background: var(--ground); border-radius: 8px; padding: 10px; }
+.bf-row input, .bf-row textarea, .bf-link input { width: 100%; font-size: calc(14px * var(--s)); padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+.bf-link { display: grid; gap: 6px; }
+.bf-link > label { font-size: calc(12px * var(--s)); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -375,8 +386,8 @@ function drawTools() {
   document.getElementById("tools").replaceChildren(
     el("button", { type: "button", text: "A−", "aria-label": "Smaller text", title: "Smaller text", disabled: i === 0, onclick: () => stepSize(-1) }),
     el("button", { type: "button", text: "A+", "aria-label": "Larger text", title: "Larger text", disabled: i === SIZES.length - 1, onclick: () => stepSize(1) }),
-    el("button", { type: "button", text: "▦ Share", "aria-label": "Share this page: show a QR code", title: "Share this page", onclick: openShare }),
-    el("button", { type: "button", text: isDark() ? "☀ Day" : "☾ Night", "aria-label": isDark() ? "Switch to day mode" : "Switch to night mode", onclick: () => { prefs.theme = isDark() ? "light" : "dark"; applyPrefs(); } })
+    el("button", { type: "button", text: isDark() ? "☀ Day" : "☾ Night", "aria-label": isDark() ? "Switch to day mode" : "Switch to night mode", onclick: () => { prefs.theme = isDark() ? "light" : "dark"; applyPrefs(); } }),
+    el("button", { type: "button", text: "▦ Share", "aria-label": "Share this page: show a QR code", title: "Share this page", onclick: openShare })
   );
 }
 applyPrefs();
@@ -390,11 +401,32 @@ function shareUrl() {
 }
 function openShare() {
   if (document.getElementById('share-modal')) return;
-  const url = shareUrl();
-  let svg = '';
-  try { const q = qrcode(0, 'M'); q.addData(url); q.make(); svg = q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); } catch (e) {}
-  const qrBox = el('div', { class: 'qr', role: 'img', 'aria-label': 'QR code for ' + url });
-  if (svg) qrBox.innerHTML = svg; else qrBox.textContent = 'Could not draw the QR code. Use the link below.';
+  let url = shareUrl();
+  const qrBox = el('div', { class: 'qr', role: 'img', 'aria-label': 'QR code for the link below' });
+  const linkLine = el('p', { class: 'linkline' });
+  const warn = el('p', { class: 'check', style: 'margin:0;display:none' });
+  function drawQr() {
+    let svg = '';
+    try { const q = qrcode(0, 'M'); q.addData(url); q.make(); svg = q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); } catch (e) {}
+    if (svg) qrBox.innerHTML = svg; else qrBox.textContent = 'Could not draw the QR code. Use the link below.';
+    linkLine.textContent = url;
+  }
+  drawQr();
+  // PM pages can also show a code for the PM view itself (carries the private key), to get it onto the PM's own phone.
+  let pmSwitch = '';
+  if (MODE === 'pm' && PM_KEY) {
+    const bM = el('button', { type: 'button', text: 'Members’ briefing', 'aria-pressed': 'true' });
+    const bP = el('button', { type: 'button', text: 'My PM view', 'aria-pressed': 'false' });
+    const pick = priv => {
+      url = priv ? ROOT + 'pm/?pm=' + encodeURIComponent(PM_KEY) : shareUrl();
+      bM.setAttribute('aria-pressed', priv ? 'false' : 'true'); bP.setAttribute('aria-pressed', priv ? 'true' : 'false');
+      warn.textContent = priv ? 'This code contains your private PM key. Scan it with your own phone only, and don’t share or screenshot it.' : '';
+      warn.style.display = priv ? '' : 'none';
+      drawQr();
+    };
+    bM.addEventListener('click', () => pick(false)); bP.addEventListener('click', () => pick(true));
+    pmSwitch = el('div', { class: 'toggle', role: 'group', 'aria-label': 'Which link', style: 'justify-self:center' }, [bM, bP]);
+  }
   const prevFocus = document.activeElement;
   const close = () => { back.remove(); document.removeEventListener('keydown', onKey); if (prevFocus && prevFocus.focus) prevFocus.focus(); };
   const onKey = e => { if (e.key === 'Escape') close(); };
@@ -405,9 +437,11 @@ function openShare() {
   const row = [copyBtn];
   if (navigator.share) row.push(el('button', { class: 'btn ghost', type: 'button', text: 'Share…', onclick: () => { navigator.share({ title: document.title, url: url }).catch(() => {}); } }));
   const box = el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'share-h' }, [
-    el('h2', { id: 'share-h', text: MODE === 'pm' ? 'Share the members’ briefing' : 'Open this on your phone' }),
+    el('h2', { id: 'share-h', text: 'Open this on your phone' }),
+    pmSwitch,
     qrBox,
-    el('p', { class: 'linkline', text: url }),
+    linkLine,
+    warn,
     el('div', { class: 'row' }, row),
     el('div', { class: 'app-note' }, [
       el('strong', { text: 'Want it as an app on your phone?' }),
@@ -611,7 +645,7 @@ function renderPart(me) {
       extras(a),
     ]);
   });
-  return el('section', { class: 'part' }, [head, wsKey(), el('div', { class: 'view-row' }, [sortPicker(), viewToggle()]), legend, deckMode ? deckView(cards) : el('div', { class: 'stack', style: 'gap:14px' }, cards)]);
+  return el('section', { class: 'part' }, [head, el('div', { class: 'view-row' }, [sortPicker(), viewToggle()]), deckMode ? deckView(cards) : el('div', { class: 'stack', style: 'gap:14px' }, cards)]);
 }
 
 /** Under each card: who else was asked (and who has answered), and "suggest adding someone". */
@@ -767,7 +801,7 @@ function sortList(list, d) {
     : pmSort === 'kind' ? String(KO[a.kind] == null ? 9 : KO[a.kind]) : '';
   return list.slice().sort((x, y) => { const kx = key(x), ky = key(y); return kx < ky ? -1 : kx > ky ? 1 : idx.get(x) - idx.get(y); });
 }
-const pmFold = { held: true, current: true, backlog: true, done: false };
+const pmFold = { brief: true, held: true, current: true, backlog: true, done: false };
 
 /** One editable ask card. opts: okLabel, okToast, dropLabel, ready (tick box instead of a save button), onCancel. */
 function pmEditCard(x, d, opts) {
@@ -908,14 +942,104 @@ function publishReady() {
     e => { updateBatch(); fail(e); });
 }
 
+
+/* ------------------------------------------------ PM: the briefing members see (Where we landed / Key dates / More) */
+let briefs = null;
+let briefsErr = '';
+let briefsLoading = false;
+const briefDraft = {};
+function loadBriefs() {
+  if (briefsLoading) return;
+  briefsLoading = true;
+  call('pmBriefings', [PM_KEY], r => { briefs = r.briefings || []; briefsErr = ''; briefsLoading = false; renderPm(); },
+    e => { briefsLoading = false; briefs = []; briefsErr = (e && e.message) || 'Could not load the briefing.'; renderPm(); });
+}
+const briefEditing = {};
+/** A published briefing as a plain card. Edit brings the form back. */
+function briefReadCard(b) {
+  const lines = (arr, withLink) => arr.length
+    ? el('ul', { class: 'gist' }, arr.map(r => el('li', {}, [el('span', { class: 'k', text: r[0] }), el('span', { class: 'v' }, [r[1], withLink && r[2] ? el('span', {}, [' ', el('a', { href: r[2], target: '_blank', rel: 'noopener', text: 'Link' })]) : ''])])))
+    : el('p', { class: 'none', style: 'margin:0', text: 'Nothing here.' });
+  const sec = (title, arr, withLink) => el('div', { class: 'bf-list' }, [el('span', { class: 'lab', text: title }), lines(arr, withLink)]);
+  const back = el('button', { class: 'switch', type: 'button', text: 'Take back to draft', onclick: e => {
+    if (busy) return;
+    const btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Saving…';
+    call('pmSaveBriefing', [PM_KEY, b.row, { link: b.link, landed: b.landed, dates: b.dates, more: b.more, published: false }], r => { briefs = r.briefings || []; renderPm(); toast('Taken back to draft. Members no longer see it.'); },
+      er => { btn.disabled = false; btn.textContent = 'Take back to draft'; fail(er); });
+  } });
+  return el('div', { class: 'bf' }, [
+    el('div', { class: 'bf-head' }, [el('h3', { text: 'Meeting ' + b.meeting }), el('span', { class: 'chip done', text: 'Published' })]),
+    b.link ? el('p', { class: 'small', style: 'margin:0' }, [el('a', { href: b.link, target: '_blank', rel: 'noopener', text: 'Minutes' })]) : '',
+    sec('Where we landed', b.landed), sec('Key dates', b.dates), sec('More', b.more, true),
+    el('div', { class: 'acts' }, [el('button', { class: 'btn ghost', type: 'button', text: 'Edit', onclick: () => { briefEditing[b.row] = true; renderPm(); } }), back]),
+  ]);
+}
+function briefCard(b) {
+  if (b.published && !briefEditing[b.row]) return briefReadCard(b);
+  const d = briefDraft[b.row] || (briefDraft[b.row] = { link: b.link, landed: b.landed.map(r => r.slice()), dates: b.dates.map(r => r.slice()), more: b.more.map(r => r.slice()) });
+  const redraw = () => renderPm();
+  const list = (title, arr, blank, labels, tall) => {
+    const rows = arr.map((r, i) => {
+      const a = el('input', { value: r[0], placeholder: labels[0], 'aria-label': labels[0] });
+      a.addEventListener('input', () => { r[0] = a.value; });
+      const c = el('textarea', { rows: tall ? 3 : 2, placeholder: labels[1], 'aria-label': labels[1] });
+      c.value = r[1];
+      c.addEventListener('input', () => { r[1] = c.value; });
+      const kids = [a, c];
+      if (labels[2]) {
+        const l = el('input', { value: r[2] || '', placeholder: labels[2], 'aria-label': labels[2], type: 'url' });
+        l.addEventListener('input', () => { r[2] = l.value; });
+        kids.push(l);
+      }
+      kids.push(el('button', { class: 'switch', type: 'button', style: 'justify-self:start', text: 'Remove this line', onclick: () => { arr.splice(i, 1); redraw(); } }));
+      return el('div', { class: 'bf-row' }, kids);
+    });
+    return el('div', { class: 'bf-list' }, [el('span', { class: 'lab', text: title })].concat(rows, [
+      el('button', { class: 'plus', type: 'button', text: '＋  Add a line', onclick: () => { arr.push(blank.slice()); redraw(); } })]));
+  };
+  const link = el('input', { id: 'bflink-' + b.row, type: 'url', placeholder: 'https://…' });
+  link.value = d.link;
+  link.addEventListener('input', () => { d.link = link.value; });
+  const payload = pub => ({ link: d.link, landed: d.landed, dates: d.dates, more: d.more, published: pub });
+  const act = (btn, pub, msg) => {
+    if (busy) return;
+    const was = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    call('pmSaveBriefing', [PM_KEY, b.row, payload(pub)], r => { briefs = r.briefings || []; delete briefDraft[b.row]; delete briefEditing[b.row]; renderPm(); toast(msg); },
+      e => { btn.disabled = false; btn.textContent = was; fail(e); });
+  };
+  const save = el('button', { class: 'btn ghost', type: 'button', text: 'Save changes', onclick: e => act(e.currentTarget, undefined, 'Saved. Members still see the published version.') });
+  const pub = b.published
+    ? el('button', { class: 'btn', type: 'button', text: 'Save changes', onclick: e => act(e.currentTarget, true, 'Saved. Members see the changes now.') })
+    : el('button', { class: 'btn', type: 'button', text: 'Save and publish to members', onclick: e => act(e.currentTarget, true, 'Published. Members can see it now.') });
+  const back = b.published ? el('button', { class: 'switch', type: 'button', text: 'Cancel', onclick: () => { delete briefDraft[b.row]; delete briefEditing[b.row]; renderPm(); } }) : '';
+  return el('div', { class: 'bf' }, [
+    el('div', { class: 'bf-head' }, [el('h3', { text: 'Meeting ' + b.meeting }), el('span', { class: 'chip ' + (b.published ? 'done' : 'query'), text: b.published ? 'Published' : 'Draft, members cannot see it' })]),
+    el('div', { class: 'bf-link' }, [el('label', { for: 'bflink-' + b.row, text: 'Minutes link' }), link]),
+    list('Where we landed', d.landed, ['', ''], ['Topic, e.g. Registration', 'What was decided']),
+    list('Key dates', d.dates, ['', ''], ['Date, e.g. Tue 20 Oct', 'What happens']),
+    list('More', d.more, ['', '', ''], ['Topic', 'A few sentences of detail', 'Link (optional)'], true),
+    el('div', { class: 'acts' }, b.published ? [pub, back] : [pub, save]),
+  ]);
+}
+function briefSection() {
+  if (briefs === null) loadBriefs();
+  const drafts = (briefs || []).filter(b => !b.published).length;
+  const kids = [];
+  if (briefs === null) kids.push(el('p', { class: 'none', style: 'margin:0', text: 'Loading the briefing…' }));
+  else if (briefsErr) kids.push(el('div', { class: 'error', role: 'alert', text: briefsErr + ' (If you have just been told this is new, the script may still need redeploying.)' }));
+  else if (!briefs.length) kids.push(el('p', { class: 'none', style: 'margin:0', text: 'No briefings yet. Draft one from the minutes in the sheet (menu: Draft the briefing from the minutes).' }));
+  else kids.push.apply(kids, briefs.map(briefCard));
+  return foldSection('brief', 'Briefing for members', briefs === null ? '…' : drafts, kids,
+    'The key dates, decisions and notes members see at the top of their page. Read it, correct anything, then publish. A draft stays hidden from members.');
+}
+
 function renderPm() {
   const d = data;
   const kids = [el('header', {}, [el('div', { class: 'eyebrow', text: ORG + ' · project-manager view' + (d.me ? ' · ' + d.me : '') }), el('h1', {}, ['Where things ', el('em', { text: 'stand' })])])];
   kids.push(el('div', { class: 'stats' }, [['Done', d.stats.done], ['In progress', d.stats.team], [t('pm_cant_stat'), d.stats.cant], ['With you to check', d.stats.query], ['No answer yet', d.stats.open]]
     .map(([l, n]) => el('div', { class: 'stat' }, [el('b', { text: String(n) }), el('span', { text: l })]))));
   kids.push(el('div', { class: 'stack' }, [
-    el('div', { class: 'small', text: 'Colour strip on the left = project area. The tab at the top right says whether it is for one person, an ask for the group, or a task for the group.' }),
-    wsKey(),
     el('label', { class: 'small', for: 'pmsort', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, ['Sort each list by',
       (() => { const sel = el('select', { id: 'pmsort', style: 'font-size:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)' }, SORTS.map(o => el('option', { value: o[0], text: o[1] })));
         sel.value = pmSort;
@@ -960,6 +1084,8 @@ function renderPm() {
     });
     kids.push(sc);
   }
+
+  kids.push(briefSection());
 
   // Held back: tick "Ready" on each one once it is checked, then publish the lot in one go.
   const heldKids = [];
