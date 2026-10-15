@@ -386,8 +386,8 @@ function drawTools() {
   document.getElementById("tools").replaceChildren(
     el("button", { type: "button", text: "A−", "aria-label": "Smaller text", title: "Smaller text", disabled: i === 0, onclick: () => stepSize(-1) }),
     el("button", { type: "button", text: "A+", "aria-label": "Larger text", title: "Larger text", disabled: i === SIZES.length - 1, onclick: () => stepSize(1) }),
-    el("button", { type: "button", text: "▦ Share", "aria-label": "Share this page: show a QR code", title: "Share this page", onclick: openShare }),
-    el("button", { type: "button", text: isDark() ? "☀ Day" : "☾ Night", "aria-label": isDark() ? "Switch to day mode" : "Switch to night mode", onclick: () => { prefs.theme = isDark() ? "light" : "dark"; applyPrefs(); } })
+    el("button", { type: "button", text: isDark() ? "☀ Day" : "☾ Night", "aria-label": isDark() ? "Switch to day mode" : "Switch to night mode", onclick: () => { prefs.theme = isDark() ? "light" : "dark"; applyPrefs(); } }),
+    el("button", { type: "button", text: "▦ Share", "aria-label": "Share this page: show a QR code", title: "Share this page", onclick: openShare })
   );
 }
 applyPrefs();
@@ -645,7 +645,7 @@ function renderPart(me) {
       extras(a),
     ]);
   });
-  return el('section', { class: 'part' }, [head, wsKey(), el('div', { class: 'view-row' }, [sortPicker(), viewToggle()]), legend, deckMode ? deckView(cards) : el('div', { class: 'stack', style: 'gap:14px' }, cards)]);
+  return el('section', { class: 'part' }, [head, el('div', { class: 'view-row' }, [sortPicker(), viewToggle()]), deckMode ? deckView(cards) : el('div', { class: 'stack', style: 'gap:14px' }, cards)]);
 }
 
 /** Under each card: who else was asked (and who has answered), and "suggest adding someone". */
@@ -1040,8 +1040,6 @@ function renderPm() {
   kids.push(el('div', { class: 'stats' }, [['Done', d.stats.done], ['In progress', d.stats.team], [t('pm_cant_stat'), d.stats.cant], ['With you to check', d.stats.query], ['No answer yet', d.stats.open]]
     .map(([l, n]) => el('div', { class: 'stat' }, [el('b', { text: String(n) }), el('span', { text: l })]))));
   kids.push(el('div', { class: 'stack' }, [
-    el('div', { class: 'small', text: 'Colour strip on the left = project area. The tab at the top right says whether it is for one person, an ask for the group, or a task for the group.' }),
-    wsKey(),
     el('label', { class: 'small', for: 'pmsort', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, ['Sort each list by',
       (() => { const sel = el('select', { id: 'pmsort', style: 'font-size:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)' }, SORTS.map(o => el('option', { value: o[0], text: o[1] })));
         sel.value = pmSort;
