@@ -496,6 +496,7 @@ function navBar() {
   ]);
 }
 
+function hasPmKey() { try { return !!localStorage.getItem(PFX + 'PmKey'); } catch (e) { return false; } }
 function renderBriefing() {
   const me = data.people.find(p => p.name === getMe());
   const b = data.briefing;
@@ -528,6 +529,7 @@ function renderBriefing() {
   }
   kids.push(el('section', { class: 'inline' }, [
     data.dashboardUrl ? el('a', { class: 'btn ghost', href: data.dashboardUrl, target: '_blank', rel: 'noopener', text: t('btn_dashboard') }) : '',
+    hasPmKey() ? el('a', { class: 'btn ghost', href: ROOT + 'pm/', text: 'PM view' }) : '',
     b && b.minutes ? el('a', { class: 'btn ghost', href: b.minutes, target: '_blank', rel: 'noopener', text: t('btn_minutes') }) : '',
   ]));
   app.replaceChildren(...kids);
