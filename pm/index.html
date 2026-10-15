@@ -993,7 +993,6 @@ function pmAskCard(a, d) {
     el('div', { class: 'ask-text', text: a.text }),
     el('div', { class: 'ask-meta', text: ['For ' + a.forText, a.by ? 'by ' + a.by : '', a.raised ? 'raised ' + a.raised : '', a.source].filter(Boolean).join(' · ') }),
     link,
-    a.summary ? el('div', { class: 'sum', text: a.summary }) : '',
     peopleFold,
     el('div', { class: 'acts' }, acts),
   ]);
