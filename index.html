@@ -709,7 +709,18 @@ function renderPart(me) {
       extras(a),
     ]);
   });
-  return el('section', { class: 'part' }, [head, el('div', { class: 'view-row' }, [sortPicker(), viewToggle()]), deckMode ? deckView(cards) : el('div', { class: 'stack', style: 'gap:14px' }, cards)]);
+  const isDone = a => !!(a.answer && (a.answer.status === 'done' || a.answer.status === 'cant'));
+  const openCards = cards.filter((_, i) => !isDone(mine[i]));
+  const doneCards = cards.filter((_, i) => isDone(mine[i]));
+  const kids = [head, el('div', { class: 'view-row' }, [sortPicker(), viewToggle()])];
+  if (openCards.length) kids.push(deckMode ? deckView(openCards) : el('div', { class: 'stack', style: 'gap:14px' }, openCards));
+  else kids.push(el('p', { class: 'none', style: 'margin:0', text: t('none_for_you') }));
+  const sections = [el('section', { class: 'part' }, kids)];
+  if (doneCards.length) sections.push(el('section', { class: 'part' }, [
+    el('div', { class: 'part-head' }, [el('h2', { text: 'Done' })]),
+    el('div', { class: 'stack', style: 'gap:14px' }, doneCards),
+  ]));
+  return sections.length === 1 ? sections[0] : el('div', { class: 'stack', style: 'gap:22px' }, sections);
 }
 
 /** Under each card: who else was asked (and who has answered), and "suggest adding someone". */
