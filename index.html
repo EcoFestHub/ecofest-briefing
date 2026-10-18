@@ -651,6 +651,7 @@ function sortPicker() {
   sel.setAttribute('aria-label', 'Sort by'); sel.title = 'Sort by';
   return el('label', { class: 'small', for: 'memsort', title: 'Sort by', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [ico('sort'), sel]);
 }
+let doneOpen = true; // stays folded or open across re-renders
 function renderPart(me) {
   const mine = sortMine(data.mine);
   const head = el('div', { class: 'part-head' }, [el('h2', { text: t('h_part') })]);
@@ -716,9 +717,9 @@ function renderPart(me) {
   if (openCards.length) kids.push(deckMode ? deckView(openCards) : el('div', { class: 'stack', style: 'gap:14px' }, openCards));
   else kids.push(el('p', { class: 'none', style: 'margin:0', text: t('none_for_you') }));
   const sections = [el('section', { class: 'part' }, kids)];
-  if (doneCards.length) sections.push(el('section', { class: 'part' }, [
-    el('div', { class: 'part-head' }, [el('h2', { text: 'Done' })]),
-    el('div', { class: 'stack', style: 'gap:14px' }, doneCards),
+  if (doneCards.length) sections.push(el('details', { class: 'fold', open: doneOpen, ontoggle: e => { doneOpen = e.currentTarget.open; } }, [
+    el('summary', {}, [el('h2', { text: 'Done' }), el('span', { class: 'cnt', text: String(doneCards.length) })]),
+    el('div', { class: 'stack', style: 'gap:14px;margin-top:14px' }, doneCards),
   ]));
   return sections.length === 1 ? sections[0] : el('div', { class: 'stack', style: 'gap:22px' }, sections);
 }
