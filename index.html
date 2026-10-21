@@ -1112,7 +1112,7 @@ function pmAskCard(a, d) {
     acts.push(el('button', { class: 'switch', type: 'button', text: 'Bring it back now', onclick: () => act('pmHold', [a.id, 'restore'], 'Back in play.') }));
   } else if (a.bucket !== 'done') {
     acts.push(el('button', { class: 'switch', type: 'button', text: a.nudge ? 'Take off nudges' : 'Add to nudges', onclick: () => act('pmNudge', [a.id, !a.nudge], a.nudge ? 'Taken off the nudge list.' : 'Added. It now shows in your review box.') }));
-    acts.push(el('button', { class: 'switch', type: 'button', text: a.pinned ? 'Unpin from their list' : 'Pin to the top of their list', onclick: () => act('pmPin', [a.id, !a.pinned], a.pinned ? 'Unpinned.' : 'Bold and first in their list until they answer.') }));
+    if (d.pins) acts.push(el('button', { class: 'switch', type: 'button', text: a.pinned ? 'Unpin from their list' : 'Pin to the top of their list', onclick: () => act('pmPin', [a.id, !a.pinned], a.pinned ? 'Unpinned.' : 'Bold and first in their list until they answer.') }));
   }
   if (a.mode === 'invite') {
     if (a.enough) acts.push(el('button', { class: 'switch', type: 'button', text: 'Reopen', onclick: () => { if (busy) return; call('pmEnough', [PM_KEY, a.id, false], r => { data = r; renderPm(); toast('Reopened.'); }); } }));
@@ -1326,14 +1326,14 @@ function renderPm() {
 
   if (d.cants.length) {
     const cc = el('section', { class: 'card' }, [el('h2', { text: t('pm_cants_h') + ' (' + d.cants.length + ')' }),
-      el('p', { class: 'small', style: 'margin:0', text: 'Ask again keeps it on their list for the next meeting. Snooze hides it from you until the date you pick. Back burner counts it as done for now, so you can pull it back later. Drop records it as dropped on the dashboard and takes it off everyone’s list.' })]);
+      el('p', { class: 'small', style: 'margin:0', text: 'Ask again keeps it on their list for the next meeting. Snooze hides it from you until the date you pick. ' + (d.backburner ? 'Back burner counts it as done for now, so you can pull it back later. ' : '') + 'Drop records it as dropped on the dashboard and takes it off everyone’s list.' })]);
     d.cants.forEach(x => {
       const again = el('button', { class: 'btn', type: 'button', text: t('pm_again') });
       const snooze = el('button', { class: 'btn ghost', type: 'button', text: 'Snooze until' });
       const when = el('input', { type: 'date', 'aria-label': 'Snooze until this date', value: d.snoozeDefault || '' });
       const burner = el('button', { class: 'switch', type: 'button', text: 'Back burner' });
       const drop = el('button', { class: 'switch', type: 'button', text: 'Drop it' });
-      const all = [again, snooze, burner, drop];
+      const all = [again, snooze].concat(d.backburner ? [burner] : [], [drop]);
       const labels = all.map(b => b.textContent);
       const lock = b => { if (busy) return false; all.forEach(z => { z.disabled = true; }); b.textContent = t('saving'); return true; };
       const unlock = e => { all.forEach((z, i) => { z.disabled = false; z.textContent = labels[i]; }); fail(e); };
@@ -1344,7 +1344,7 @@ function renderPm() {
       cc.append(el('div', { class: 'q' }, [
         el('div', { class: 'small', text: x.source + ' · ' + x.scope + (x.by && x.by !== x.scope ? ' (answered by ' + x.by + ')' : '') }),
         el('div', { text: x.ask }),
-        el('div', { class: 'snooze-row' }, [again, snooze, when, burner, drop]),
+        el('div', { class: 'snooze-row' }, [again, snooze, when].concat(d.backburner ? [burner] : [], [drop])),
       ]));
     });
     kids.push(cc);
