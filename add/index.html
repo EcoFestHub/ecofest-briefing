@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="EcoFest add asks">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="../icon.svg">
+<link rel="apple-touch-icon" href="../icon-180.png">
 <meta charset="utf-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,500;1,6..72,400;1,6..72,500&display=swap">
@@ -129,6 +130,7 @@ details.fold > .fold-body { display: grid; gap: 14px; margin-top: 12px; }
 .chip.query { background: var(--warm-soft); color: var(--warm); }
 .chip.hold { background: var(--quiet-soft); color: var(--quiet); }
 .ask.nudging { outline: 4px solid var(--warm); outline-offset: 2px; }
+.ask.watching { border-left: 6px solid var(--quiet); }
 .ask.pinned { outline: 3px solid var(--accent); outline-offset: 1px; }
 .ask.pinned .ask-text { font-weight: 800; }
 .tag { display: inline-block; font-size: calc(12px * var(--s)); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: var(--warm); color: var(--paper); justify-self: start; }
@@ -991,7 +993,7 @@ function sortList(list, d) {
     : pmSort === 'kind' ? String(KO[a.kind] == null ? 9 : KO[a.kind]) : '';
   return list.slice().sort((x, y) => { const kx = key(x), ky = key(y); return kx < ky ? -1 : kx > ky ? 1 : idx.get(x) - idx.get(y); });
 }
-const pmFold = { brief: false, held: false, current: false, backlog: false, done: false, snoozed: false };
+const pmFold = { brief: false, held: false, watch: false, current: false, backlog: false, done: false, snoozed: false };
 
 /** One editable ask card. opts: okLabel, okToast, dropLabel, ready (tick box instead of a save button), onCancel. */
 function pmEditCard(x, d, opts) {
@@ -1111,7 +1113,10 @@ function pmAskCard(a, d) {
   } else if (a.bucket === 'snoozed') {
     acts.push(el('button', { class: 'switch', type: 'button', text: 'Bring it back now', onclick: () => act('pmHold', [a.id, 'restore'], 'Back in play.') }));
   } else if (a.bucket !== 'done') {
-    acts.push(el('button', { class: 'switch', type: 'button', text: a.nudge ? 'Take off nudges' : 'Add to nudges', onclick: () => act('pmNudge', [a.id, !a.nudge], a.nudge ? 'Taken off the nudge list.' : 'Added. It now shows in your review box.') }));
+    // Review box (a nudge): look at it, then pin it, watch it or send it back. Watch list: pin it or send it back.
+    if (!a.nudging && !a.watching) acts.push(el('button', { class: 'switch', type: 'button', text: 'Add to nudges', onclick: () => act('pmNudge', [a.id, true], 'Added. It now shows in your review box.') }));
+    if (a.nudging) acts.push(el('button', { class: 'btn', type: 'button', text: 'Move to watch list', onclick: () => act('pmWatch', [a.id, true], 'On the watch list.') }));
+    if (a.nudging || a.watching) acts.push(el('button', { class: 'switch', type: 'button', text: 'Return to ' + a.home, onclick: () => act(a.watching ? 'pmWatch' : 'pmNudge', [a.id, false], 'Back in ' + a.home + '. It comes back for a nudge on its due date.') }));
     if (d.pins) acts.push(el('button', { class: 'switch', type: 'button', text: a.pinned ? 'Unpin from their list' : 'Pin to the top of their list', onclick: () => act('pmPin', [a.id, !a.pinned], a.pinned ? 'Unpinned.' : 'Bold and first in their list until they answer.') }));
   }
   if (a.mode === 'invite') {
@@ -1122,9 +1127,10 @@ function pmAskCard(a, d) {
     acts.push(el('button', { class: 'btn', type: 'button', disabled: a.onAgenda, text: a.onAgenda ? 'On the agenda (nudge ' + a.nudges + ')' : 'Put on the next agenda', onclick: () => { if (busy) return; call('pmPromote', [PM_KEY, a.id], r => { data = r; renderPm(); toast('Added to the next agenda as a nudge.'); }); } }));
   }
   const holdNote = a.hold ? el('span', { class: 'chip hold', text: a.hold === 'dropped' ? 'Dropped' : 'Back burner' }) : a.bucket === 'snoozed' ? el('span', { class: 'chip hold', text: 'Snoozed until ' + a.snoozedUntil }) : '';
-  return el('div', { class: 'ask k-' + a.kind + (a.nudging ? ' nudging' : '') + (a.pinned ? ' pinned' : ''), style: wsStyle(a.section) }, [
+  return el('div', { class: 'ask k-' + a.kind + (a.nudging ? ' nudging' : '') + (a.watching ? ' watching' : '') + (a.pinned ? ' pinned' : ''), style: wsStyle(a.section) }, [
     el('div', { class: 'flag', title: KIND_PM[a.kind] || a.kind, 'aria-label': KIND_PM[a.kind] || a.kind }, [kindIcon(a.kind)]),
     a.nudging ? el('span', { class: 'tag', text: 'Nudge' }) : '',
+    a.watching ? el('span', { class: 'tag', text: 'Watching' }) : '',
     a.nudging ? el('div', { class: 'ask-meta', style: 'font-weight:700', text: a.nudgeWhy }) : '',
     a.pinned ? el('span', { class: 'tag pin', text: 'Pinned in their list' }) : '',
     hasWs() ? el('div', { class: 'wsname' }, [el('i'), a.section && a.section !== 'Not sure' ? a.section : 'Project area to be confirmed']) : '',
@@ -1321,7 +1327,7 @@ function renderPm() {
     el('div', { class: 'flag', title: (x.live ? 'Live, not yet checked' : 'Held back') + ' · ' + (KIND_PM[x.kind] || ''), 'aria-label': (x.live ? 'Live, not yet checked' : 'Held back') + ' · ' + (KIND_PM[x.kind] || '') }, [x.live ? 'Live, check ' : 'Held back ', kindIcon(x.kind)]),
     pmEditCard(x, d, { ready: true, dropLabel: 'Remove it' }),
   ])));
-  kids.push(foldSection('held', 'To review', d.queue.length + nudged.length, heldKids, (d.queue.length ? 'Asks held back, and asks that went live without a review tick. Correct anything that needs it and tick “Ready”, then press the button at the bottom once. ' : '') + (nudged.length ? 'Outlined cards are nudges: due soon or still waiting. Reach out in whatever way suits, or pin one to the top of their list.' : '')));
+  kids.push(foldSection('held', 'To review', d.queue.length + nudged.length, heldKids, (d.queue.length ? 'Asks held back, and asks that went live without a review tick. Correct anything that needs it and tick “Ready”, then press the button at the bottom once. ' : '') + (nudged.length ? 'Outlined cards are nudges: due soon or still waiting. Edit one, pin it to the top of their list, or reach out privately. Then move it to the watch list, or return it to where it came from.' : '')));
   if (d.queue.length) kids.push(el('div', { class: 'batch', id: 'batchbar' }, [el('button', { class: 'btn', type: 'button', onclick: publishReady })]));
 
   if (d.cants.length) {
@@ -1351,8 +1357,10 @@ function renderPm() {
   }
 
   const by = b => sortList(d.list.filter(a => a.bucket === b), d);
-  const cur = by('current'), back = by('backlog'), dn = by('done'), snz = by('snoozed');
+  const cur = by('current'), back = by('backlog'), dn = by('done'), snz = by('snoozed'), wat = by('watch');
   const none = txt => el('p', { class: 'none', style: 'margin:0', text: txt });
+  kids.push(foldSection('watch', 'Watch list', wat.length, wat.length ? wat.map(a => pmAskCard(a, d)) : [none('Nothing on the watch list.')],
+    'Nudges you have looked at and are keeping an eye on. They stay here until they are done, or until you return them to Current or Backlog.'));
   kids.push(foldSection('current', 'Current asks', cur.length, cur.length ? cur.map(a => pmAskCard(a, d)) : [none('Nothing open from the latest meeting.')],
     'Raised at or since the last meeting that has passed, and not finished yet. Everyone invited is listed with what they have done.'));
   kids.push(foldSection('backlog', 'Backlog asks', back.length, back.length ? back.map(a => pmAskCard(a, d)) : [none('Nothing is hanging over from earlier meetings.')],
