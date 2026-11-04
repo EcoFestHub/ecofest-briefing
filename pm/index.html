@@ -812,6 +812,7 @@ function sortPicker() {
     el('label', { class: 'small', for: 'memsort', title: 'Sort by', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [L('sort', tw('lbl_sort', 'Sort by')), sel]),
     dirButton(memSort, memRev, 'MemRev', v => { memRev = v; renderMember(); })]);
 }
+let teamOpen = true; // the "On it" box
 let doneOpen = null; // stays folded or open across re-renders; starts as Settings DONE_FOLDED says
 function renderPart(me) {
   const mine = sortMine(data.mine);
@@ -872,15 +873,21 @@ function renderPart(me) {
       extras(a),
     ]);
   });
-  // Finished asks (done, or can't this month) leave the deck/list and sit under a "Done" heading.
-  const isDone = a => !!(a.answer && (a.answer.status === 'done' || a.answer.status === 'cant'));
-  const openCards = cards.filter((_, i) => !isDone(mine[i]));
+  // Done asks sit under a "Done" heading and "my team's on it" under "On it" (both leave the deck/list). Can't leaves the list altogether until a PM sends it back.
+  const isDone = a => !!(a.answer && a.answer.status === 'done');
+  const isTeam = a => !!(a.answer && a.answer.status === 'team');
+  const openCards = cards.filter((_, i) => !isDone(mine[i]) && !isTeam(mine[i]));
+  const teamCards = cards.filter((_, i) => isTeam(mine[i]));
   const doneCards = cards.filter((_, i) => isDone(mine[i]));
   const kids = [head, el('div', { class: 'view-row' }, [sortPicker(), viewToggle()])];
   if (openCards.length) kids.push(deckMode ? deckView(openCards) : el('div', { class: 'stack', style: 'gap:14px' }, openCards));
   else kids.push(el('p', { class: 'none', style: 'margin:0', text: t('none_for_you') }));
   const sections = [el('section', { class: 'part' }, kids)];
   if (doneOpen === null) doneOpen = !data.doneFolded;
+  if (teamCards.length) sections.push(el('details', { class: 'fold', open: teamOpen, ontoggle: e => { teamOpen = e.currentTarget.open; } }, [
+    el('summary', {}, [el('h2', { text: tw('lbl_onit', 'On it') }), el('span', { class: 'cnt', text: String(teamCards.length) })]),
+    el('div', { class: 'stack', style: 'gap:14px;margin-top:14px' }, teamCards),
+  ]));
   if (doneCards.length) sections.push(el('details', { class: 'fold', open: doneOpen, ontoggle: e => { doneOpen = e.currentTarget.open; } }, [
     el('summary', {}, [el('h2', { text: 'Done' }), el('span', { class: 'cnt', text: String(doneCards.length) })]),
     el('div', { class: 'stack', style: 'gap:14px;margin-top:14px' }, doneCards),
@@ -1166,6 +1173,7 @@ function pmAskCard(a, d) {
     // Review box (a nudge): look at it, then pin it, watch it or send it back. Watch list: pin it or send it back.
     if (!a.nudging && !a.watching) acts.push(el('button', { class: 'switch', type: 'button', text: 'Add to nudges', onclick: () => act('pmNudge', [a.id, true], 'Added. It now shows in your review box.') }));
     if (a.nudging) acts.push(el('button', { class: 'btn', type: 'button', text: 'Move to watch list', onclick: () => act('pmWatch', [a.id, true], 'On the watch list.') }));
+    acts.push(el('button', { class: 'switch', type: 'button', text: 'Snooze to next meeting', onclick: () => { if (!d.snoozeDefault) { fail(new Error('No upcoming meeting on the tracker. Use the date picker on a Can’t card, or add the meeting first.')); return; } act('pmHold', [a.id, 'snooze', d.snoozeDefault], 'Snoozed. It comes back in Current after the next meeting.'); } }));
     if (a.nudging || a.watching) acts.push(el('button', { class: 'switch', type: 'button', text: 'Return to ' + a.home, onclick: () => act(a.watching ? 'pmWatch' : 'pmNudge', [a.id, false], 'Back in ' + a.home + '. It comes back for a nudge on its due date.') }));
     if (d.pins) acts.push(el('button', { class: 'switch', type: 'button', text: a.pinned ? 'Unpin from their list' : 'Pin to the top of their list', onclick: () => act('pmPin', [a.id, !a.pinned], a.pinned ? 'Unpinned.' : 'Bold and first in their list until they answer.') }));
   }
@@ -1370,8 +1378,6 @@ function renderPm() {
   const d = data;
   const kids = [el('header', {}, [el('div', { class: 'eyebrow', text: ORG + ' · project-manager view' + (d.me ? ' · ' + d.me : '') }), el('h1', {}, ['Where things ', el('em', { text: 'stand' })])])];
   if (CFG.agenda !== false) kids.push(el('section', { class: 'inline' }, [el('a', { class: 'btn', href: agendaUrl(), text: 'Meeting agenda' })]));
-  kids.push(el('div', { class: 'stats' }, [['Done', d.stats.done], ['In progress', d.stats.team], [t('pm_cant_stat'), d.stats.cant], ['With you to check', d.stats.query], ['No answer yet', d.stats.open]]
-    .map(([l, n]) => el('div', { class: 'stat' }, [el('b', { text: String(n) }), el('span', { text: l })]))));
   kids.push(el('div', { class: 'stack' }, [
     el('label', { class: 'small', for: 'pmsort', title: 'Sort each list by', style: 'display:flex;gap:8px;align-items:center;flex-wrap:wrap' }, [L('sort', tw('lbl_sort', 'Sort by')),
       (() => { const sel = el('select', { id: 'pmsort', 'aria-label': 'Sort each list by', style: 'font-size:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)' }, SORTS_ALL.filter(o => o[0] !== 'area' || hasWs()).map(o => el('option', { value: o[0], text: o[1] })));
@@ -1391,7 +1397,7 @@ function renderPm() {
     kids.push(hc);
   }
   if (d.queries.length) {
-    const qc = el('section', { class: 'card' }, [el('h2', { text: '“Not for me?” to check (' + d.queries.length + ')' })]);
+    const qc = el('section', { class: 'card' }, [el('h2', { text: '“Not for me? Or need more info” to check (' + d.queries.length + ')' })]);
     d.queries.forEach(x => {
       const off = el('button', { class: 'btn', type: 'button', text: 'Take ' + x.scope + ' off this' });
       const keep = el('button', { class: 'switch', type: 'button', text: 'It is theirs (I’ll explain)' });
@@ -1411,11 +1417,12 @@ function renderPm() {
   if (d.suggestions.length) {
     const sc = el('section', { class: 'card' }, [el('h2', { text: 'Suggestions to extend an ask (' + d.suggestions.length + ')' })]);
     d.suggestions.forEach(x => {
-      const add = el('button', { class: 'btn', type: 'button', text: x.add ? 'Add ' + x.add : 'Add them', disabled: !x.add });
+      // With names: Add them. A note with no names has no one to add, so the first button just marks it as handled (never a dead button).
+      const add = el('button', { class: 'btn', type: 'button', text: x.add ? 'Add ' + x.add : 'Mark as handled' });
       const no = el('button', { class: 'switch', type: 'button', text: 'Decline' });
       const act = (b, action, msg) => { if (busy) return; add.disabled = true; no.disabled = true; b.textContent = 'Saving…';
         call('pmSuggestion', [PM_KEY, x.row, action], r => { data = r; renderPm(); toast(msg); }, e => { renderPm(); fail(e); }); };
-      add.addEventListener('click', () => act(add, 'add', 'Added to the ask.'));
+      add.addEventListener('click', () => (x.add ? act(add, 'add', 'Added to the ask.') : act(add, 'handled', 'Marked as handled.')));
       no.addEventListener('click', () => act(no, 'decline', 'Declined.'));
       sc.append(el('div', { class: 'q' }, [
         el('div', { class: 'small', text: x.by + ' suggests extending this ask (currently for ' + (x.forText || '—') + ')' }),
@@ -1479,7 +1486,7 @@ function renderPm() {
 
   if (d.cants.length) {
     const cc = el('section', { class: 'card' }, [el('h2', { text: t('pm_cants_h') + ' (' + d.cants.length + ')' }),
-      el('p', { class: 'small', style: 'margin:0', text: 'Ask again keeps it on their list for the next meeting. Snooze hides it from you until the date you pick. ' + (d.backburner ? 'Back burner counts it as done for now, so you can pull it back later. ' : '') + 'Drop records it as dropped on the dashboard and takes it off everyone’s list.' })]);
+      el('p', { class: 'small', style: 'margin:0', text: 'Their Can’t has taken it off their list. Ask again puts it back on their list now. Snooze keeps it off their list and off yours until the date you pick (next meeting by default), then it returns in Current. ' + (d.backburner ? 'Back burner counts it as done for now, so you can pull it back later. ' : '') + 'Drop records it as dropped on the dashboard and takes it off everyone’s list.' })]);
     d.cants.forEach(x => {
       const again = el('button', { class: 'btn', type: 'button', text: t('pm_again') });
       const snooze = el('button', { class: 'btn ghost', type: 'button', text: 'Snooze until' });
@@ -1513,8 +1520,8 @@ function renderPm() {
   kids.push(foldSection('backlog', 'Backlog asks', back.length, back.length ? back.map(a => pmAskCard(a, d)) : [none('Nothing is hanging over from earlier meetings.')],
     d.hasBacklogRow ? 'Still open from earlier meetings. They are listed in the BACKLOG row for ' + (d.nextMeeting || 'the next meeting') + '. “Put on the next agenda” adds a copy to that meeting, marked as a nudge.' : d.dashOn ? 'Add a row labelled “BACKLOG (still open)” at the bottom of the ' + d.trackerTab + ' tab and these will be listed there for the next meeting.' : 'Still open from earlier meetings.'));
   kids.push(foldSection('done', 'Done', dn.length, dn.length ? dn.map(a => pmAskCard(a, d)) : [none('Nothing finished yet.')],
-    'Finished asks and tasks, plus anything dropped or on the back burner (marked on the card). You can still edit or bring any of them back.'));
-  if (snz.length) kids.push(foldSection('snoozed', 'Snoozed', snz.length, snz.map(a => pmAskCard(a, d)), 'Hidden from your lists until the date shown, then they come back on their own.'));
+    'Finished asks and tasks, plus anything dropped or on the back burner (marked on the card). Finished ones leave this list once the next meeting after they were finished has passed. You can still edit or bring any of them back.'));
+  kids.push(foldSection('snoozed', 'Snoozed', snz.length, snz.length ? snz.map(a => pmAskCard(a, d)) : [none('Nothing snoozed.')], 'Delayed on purpose: overdue asks, “Can’t” answers, anything you chose to put off. Hidden from the member and from your other lists until the date shown, then it comes back into Current for that meeting cycle.'));
 
 
   kids.push(el('section', { class: 'card' }, [el('h2', { text: 'Opener for the next meeting' }), el('pre', { class: 'copy', text: d.opener })]));
