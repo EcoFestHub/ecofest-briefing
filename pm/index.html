@@ -224,6 +224,7 @@ pre.copy { margin: 0; white-space: pre-wrap; font-family: var(--f-body); font-si
 .modal .linkline { font-size: calc(13px * var(--s)); overflow-wrap: anywhere; text-align: center; margin: 0; color: var(--muted); }
 .modal .app-note { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; font-size: calc(14px * var(--s)); display: grid; gap: 6px; }
 .modal .app-note ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.modal textarea { width: 100%; font-size: calc(15px * var(--s)); padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--ground); color: var(--ink); }
 .modal .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 
 /* one-card-at-a-time deck */
@@ -372,6 +373,7 @@ const app = document.getElementById('app');
 let data = null;
 let busy = false;
 let teamFor = null;
+let queryFor = null;   // the Unsure? box is open on this ask
 let suggestFor = null;
 let suggestPick = [];
 let suggestNote = '';
@@ -501,6 +503,7 @@ const ICONS = {
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.01"/>',
   pencil: '<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 7.5l3 3"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  feedback: '<path d="M4 5h16v11H9l-5 4z"/><path d="M12 8.5v3.2M12 13.7v.01"/>',
   hourglass: '<path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/>',
 };
 function person_(cx, r, ul) {
@@ -565,12 +568,51 @@ function drawTools() {
     el("button", { type: "button", text: "A+", "aria-label": "Larger text", title: "Larger text", disabled: i === SIZES.length - 1, onclick: () => stepSize(1) }),
     el("button", { type: "button", "aria-label": isDark() ? "Switch to day mode" : "Switch to night mode", title: isDark() ? "Day mode" : "Night mode", onclick: () => { prefs.theme = isDark() ? "light" : "dark"; applyPrefs(); } }, [L(isDark() ? "sun" : "moon", isDark() ? tw("lbl_day", "Day") : tw("lbl_night", "Night"))]),
     el("button", { type: "button", "aria-label": labelMode === "icons" ? "Show words instead of icons" : "Show icons instead of words", title: labelMode === "icons" ? tw("lbl_words", "Words") : tw("lbl_icons", "Icons"), onclick: () => setLabelMode(labelMode === "icons" ? "words" : "icons") }, [labelMode === "icons" ? ico("words") : tw("lbl_icons", "Icons")]),
-    el("button", { type: "button", "aria-label": "Share this page: show a QR code", title: "Share this page", onclick: openShare }, [L("qr", tw("lbl_share", "Share"))])
+    el("button", { type: "button", "aria-label": "Share this page: show a QR code", title: "Share this page", onclick: openShare }, [L("qr", tw("lbl_share", "Share"))]),
+    el("button", { type: "button", "aria-label": "Report a problem or suggest a change", title: tw("lbl_feedback", "Feedback"), onclick: openFeedback }, [L("feedback", tw("lbl_feedback", "Feedback"))])
   );
 }
 applyPrefs();
 applyLabels();
 
+
+/* ------------------------------------------------ feedback */
+/** A small box: what kind of note, a few words, Send. It lands in the Feedback tab and in the PM view. If FEEDBACK_EMAIL is set it also offers an email link. */
+function openFeedback() {
+  if (document.getElementById('fb-modal')) return;
+  let kind = 'bug';
+  const prevFocus = document.activeElement;
+  const close = () => { back.remove(); document.removeEventListener('keydown', onKey); if (prevFocus && prevFocus.focus) prevFocus.focus(); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const kinds = [['bug', tw('fb_t_bug', 'Something’s wrong')], ['idea', tw('fb_t_idea', 'An idea')], ['other', tw('fb_t_other', 'Something else')]];
+  const toggles = kinds.map(k => el('button', { type: 'button', text: k[1], 'aria-pressed': k[0] === kind ? 'true' : 'false', onclick: () => {
+    kind = k[0]; toggles.forEach((b, i) => b.setAttribute('aria-pressed', kinds[i][0] === kind ? 'true' : 'false'));
+  } }));
+  const note = el('textarea', { id: 'fb-note', rows: 4, maxlength: '1000', placeholder: tw('fb_placeholder', 'What happened, or what would help?'), 'aria-label': tw('fb_placeholder', 'What happened, or what would help?') });
+  const pageName = MODE === 'pm' ? 'PM view' : VIEW === 'add' ? 'Add asks' : VIEW === 'agenda' ? 'Agenda' : 'My asks';
+  const send = el('button', { class: 'btn', type: 'button', text: tw('fb_send', 'Send') });
+  send.addEventListener('click', () => {
+    if (!note.value.trim()) { note.focus(); return; }
+    if (busy) return;
+    send.disabled = true; send.textContent = tw('saving', 'Saving…');
+    call('sendFeedback', [getMe(), kind, note.value, pageName], () => { close(); toast(tw('fb_thanks', 'Thank you, that has been sent.')); },
+      e => { send.disabled = false; send.textContent = tw('fb_send', 'Send'); fail(e); });
+  });
+  const to = (data && data.feedbackEmail) || '';
+  const mail = to ? el('a', { class: 'small', href: 'mailto:' + to + '?subject=' + encodeURIComponent(ORG + ' app feedback') + '&body=' + encodeURIComponent('(' + pageName + ')\n\n'), text: tw('fb_email', 'Or email it instead') }) : '';
+  const box = el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'fb-h' }, [
+    el('h2', { id: 'fb-h', text: tw('fb_h', 'Tell us about this app') }),
+    el('p', { class: 'small', style: 'margin:0', text: tw('fb_hint', 'Something not working, or an idea to make it better? One line is plenty.') }),
+    el('div', { class: 'toggle', role: 'group', 'aria-label': 'What kind of note', style: 'justify-self:start;flex-wrap:wrap' }, toggles),
+    note,
+    el('div', { class: 'row' }, [send, el('button', { class: 'switch', type: 'button', text: 'Cancel', onclick: close })]),
+    mail ? el('div', { class: 'row' }, [mail]) : '',
+  ]);
+  const back = el('div', { class: 'modal-back', id: 'fb-modal', onclick: e => { if (e.target === back) close(); } }, [box]);
+  document.body.append(back);
+  document.addEventListener('keydown', onKey);
+  note.focus();
+}
 
 /* ------------------------------------------------ share (QR) */
 /** Where the members' page lives: the static site's root, or the Apps Script web app address. */
@@ -835,12 +877,33 @@ function renderPart(me) {
       el('button', { type: 'button', text: t('btn_done'), onclick: e => send(a.id, 'done', '', e.currentTarget) }),
       el('button', { type: 'button', text: t('btn_team'), onclick: () => { teamFor = a.id; renderMember(); } }),
       el('button', { type: 'button', text: t('btn_cant'), onclick: e => send(a.id, 'cant', '', e.currentTarget) }),
-      withQuery ? el('button', { type: 'button', class: 'ghosty', text: t('btn_query'), title: t('query_tip'), onclick: e => send(a.id, 'query', '', e.currentTarget) }) : '',
+      withQuery ? el('button', { type: 'button', class: 'ghosty', text: t('btn_query'), title: t('query_tip'), onclick: () => { queryFor = a.id; teamFor = null; renderMember(); } }) : '',
     ]);
-    if (a.answer && a.answer.status === 'query' && teamFor !== a.id) {
+    const ansDone = !!(a.answer && (a.answer.status === 'done' || a.answer.status === 'team'));
+    if (a.closed && !ansDone) {
+      // The PMs have said enough people have joined: it sits in Done with a thank-you, whatever the member did or didn't do.
+      tail = el('p', { class: 'note', text: t('closed_note') });
+    } else if (queryFor === a.id && !(a.answer && a.answer.status === 'query')) {
+      // Unsure?: two quick choices (one tap sends it), or a few words of their own.
+      const go = txt => { queryFor = null; send(a.id, 'query', txt); };
+      const inp = el('input', { id: 'q-' + a.id, maxlength: '280', placeholder: t('query_placeholder'), 'aria-label': t('query_placeholder') });
+      tail = el('div', { class: 'stack' }, [
+        el('p', { class: 'small', style: 'margin:0', text: t('query_h') }),
+        el('div', { class: 'resp' }, [
+          el('button', { type: 'button', text: t('query_o1'), onclick: () => go(t('query_o1')) }),
+          el('button', { type: 'button', text: t('query_o2'), onclick: () => go(t('query_o2')) }),
+        ]),
+        el('form', { class: 'inline', onsubmit: e => { e.preventDefault(); if (inp.value.trim()) go(inp.value.trim()); else inp.focus(); } }, [
+          inp, el('button', { class: 'switch', type: 'submit', text: t('query_send') }),
+          el('button', { class: 'switch', type: 'button', text: 'Cancel', onclick: () => { queryFor = null; renderMember(); } }),
+        ]),
+      ]);
+      setTimeout(() => { if (document.activeElement === document.body) inp.focus(); }, 0);
+    } else if (a.answer && a.answer.status === 'query' && teamFor !== a.id) {
       // Stays in the list until a PM has checked it; they can still answer once it's clear.
       tail = el('div', { class: 'stack' }, [
         el('div', { class: 'answered' }, [chip('query'), el('span', { class: 'small', text: t('query_note') })]),
+        a.answer.note ? el('p', { class: 'small', style: 'margin:0', text: t('query_you_said', { note: a.answer.note }) }) : '',
         buttons(false),
       ]);
     } else if (a.answer && a.answer.status !== 'open' && a.answer.status !== 'query') {
@@ -874,8 +937,8 @@ function renderPart(me) {
     ]);
   });
   // Done asks sit under a "Done" heading and "my team's on it" under "On it" (both leave the deck/list). Can't leaves the list altogether until a PM sends it back.
-  const isDone = a => !!(a.answer && a.answer.status === 'done');
   const isTeam = a => !!(a.answer && a.answer.status === 'team');
+  const isDone = a => !!(a.answer && a.answer.status === 'done') || (a.closed && !isTeam(a));   // closed = the PMs said "that's enough", so it moves to Done even if they never answered
   const openCards = cards.filter((_, i) => !isDone(mine[i]) && !isTeam(mine[i]));
   const teamCards = cards.filter((_, i) => isTeam(mine[i]));
   const doneCards = cards.filter((_, i) => isDone(mine[i]));
@@ -939,12 +1002,47 @@ function extras(a) {
   return kids.length || box.length ? el('div', { class: 'stack' }, [kids.length ? el('div', { class: 'extras' }, kids) : '', ...box]) : '';
 }
 
+// A tap shows at once. The answer is saved in the background (one at a time, in order), then the page quietly re-reads itself
+// and the tracker icon is updated (dashSync). If a save fails the page says so and goes back to what the sheet really holds.
+const ansQ = [];
+let ansRun = false, refreshSeq = 0;
+function applyLocal(id, status, note) {
+  const list = (data && data.mine) || [];
+  const i = list.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const it = list[i];
+  if (status === 'cant') { list.splice(i, 1); return; }   // Can't leaves the member's list, as on the server
+  it.answer = status === 'open' ? null : { status: status, by: getMe(), note: note || '' };
+  if (status === 'done' || status === 'team') it.pinned = false;
+  (it.others || []).forEach(o => { if (o.me) o.state = status === 'done' || status === 'team' ? status : 'open'; });
+}
+function ansPump() {
+  if (ansRun || !ansQ.length) return;
+  ansRun = true;
+  const args = ansQ.shift();
+  const next = failed => {
+    ansRun = false;
+    if (failed) toast('Could not save that one. Check your connection.');
+    if (ansQ.length) ansPump(); else { qcall('dashSync', [], null, () => {}); refreshQuiet(); }
+  };
+  qcall('answer', args, () => next(false), () => next(true));
+}
+/** Re-read the page data without a loading pill. Skipped if a newer tap is still saving, and only the latest reply is used. */
+function refreshQuiet() {
+  const seq = ++refreshSeq;
+  qcall('getBriefing', [getMe()], d => {
+    if (seq !== refreshSeq || ansRun || ansQ.length) return;
+    data = d; keepLast(d);
+    if (VIEW === 'my' && !teamFor && !queryFor && !suggestFor && !busy) renderMember();
+  }, () => {});
+}
 function send(id, status, note, btn) {
   if (busy) return;
-  app.querySelectorAll('.resp button').forEach(b => { b.disabled = true; });
-  if (btn) btn.textContent = t('saving');
-  call('answer', [id, getMe(), status, note], d => { data = d; renderMember(); toast(status === 'open' ? t('toast_cleared') : status === 'query' ? t('toast_query') : t('toast_saved')); },
-    e => { renderMember(); fail(e); });
+  applyLocal(id, status, note);
+  renderMember();
+  toast(status === 'open' ? t('toast_cleared') : status === 'query' ? t('toast_query') : t('toast_saved'));
+  ansQ.push([id, getMe(), status, note, true]);
+  ansPump();
 }
 
 /* ------------------------------------------------ Add asks page */
@@ -1013,10 +1111,12 @@ function renderAdd() {
     const rows = addRows.filter(r => r.text.trim() || r.who.length).map(r => ({ who: r.who, text: r.text, by: r.by, kind: r.kind, workstream: r.ws, link: r.link, linkText: r.linkText }));
     if (!rows.length) { fail(new Error('Nothing to save yet.')); return; }
     saveBtn.disabled = true; saveBtn.textContent = t('saving');
-    call('addAsks', [getMe(), rows, addWhen, addReview], r => {
+    call('addAsks', [getMe(), rows, addWhen, addReview, true], r => {
       addRows = [blankRow()];
       toast(t('add_saved'));
-      call('getBriefing', [getMe()], d => { data = d; renderAdd(); });
+      renderAdd();
+      qcall('dashSync', [], null, () => {});   // the tracker is updated in the background, nobody waits for it
+      refreshQuiet();
     }, e => { saveBtn.disabled = false; saveBtn.textContent = t('add_save'); fail(e); });
   } });
   kids.push(el('section', { class: 'addrow' }, [
@@ -1038,6 +1138,8 @@ function loadPm() { call('getPm', [PM_KEY], d => { data = d; renderPm(); }); }
 const collectors = {};
 const readySet = {};
 const editing = {};
+const queryEditing = {};   // Unsure? cards being edited in place (key: ask id | person)
+const queryReply = {};     // the PM's reply typed so far (same key)
 let pmSort = 'default';
 try { pmSort = localStorage.getItem(PFX + 'PmSort') || 'default'; } catch (e) {}
 const SORTS_ALL = [['default', 'As raised'], ['due', 'Due date'], ['area', 'Project area'], ['kind', 'Task / ask / one person']];
@@ -1088,7 +1190,7 @@ function pmEditCard(x, d, opts) {
     ok.addEventListener('click', () => {
       if (busy) return;
       all.forEach(b => { b.disabled = true; }); ok.textContent = 'Saving…';
-      call('pmConfirm', [PM_KEY, x.id].concat(args()), r => { delete editing[x.id]; data = r; renderPm(); toast(opts.okToast); },
+      call('pmConfirm', [PM_KEY, x.id].concat(args()), r => { if (opts.after) { opts.after(r); return; } delete editing[x.id]; data = r; renderPm(); toast(opts.okToast); },
         e => { all.forEach(b => { b.disabled = false; }); ok.textContent = opts.okLabel; fail(e); });
     });
   }
@@ -1387,6 +1489,21 @@ function renderPm() {
       dirButton(pmSort, pmRev, 'PmRev', v => { pmRev = v; renderPm(); })]),
   ]));
 
+  if (d.feedback && d.feedback.length) {
+    const fc = el('section', { class: 'card' }, [el('h2', { text: 'Feedback on the app (' + d.feedback.length + ')' }),
+      el('p', { class: 'small', style: 'margin:0', text: 'Problems and ideas from the Feedback button. Mark each one handled when you have dealt with it.' })]);
+    d.feedback.forEach(x => {
+      const done = el('button', { class: 'btn', type: 'button', text: 'Mark as handled' });
+      done.addEventListener('click', () => { if (busy) return; done.disabled = true; done.textContent = 'Saving…'; call('pmFeedbackDone', [PM_KEY, x.row], r => { data = r; renderPm(); toast('Marked as handled.'); }, e => { renderPm(); fail(e); }); });
+      fc.append(el('div', { class: 'q' }, [
+        el('div', { class: 'small', text: ({ bug: 'Something’s wrong', idea: 'An idea', other: 'Something else' })[x.type] + ' · ' + x.from + (x.page ? ' · ' + x.page : '') + (x.when ? ' · ' + x.when : '') }),
+        el('div', { text: x.note }),
+        el('div', { class: 'inline' }, [done]),
+      ]));
+    });
+    kids.push(fc);
+  }
+
   if (d.held && d.held.length) {
     const hc = el('section', { class: 'card' }, [el('h2', { text: 'Held back from the meeting (' + d.held.length + ')' }), el('p', { class: 'small', style: 'margin:0', text: 'Notes written on open tasks. If a note means an ask should change, edit the ask below, then tick Checked.' })]);
     d.held.forEach(x => {
@@ -1397,18 +1514,43 @@ function renderPm() {
     kids.push(hc);
   }
   if (d.queries.length) {
-    const qc = el('section', { class: 'card' }, [el('h2', { text: '“Not for me? Or need more info” to check (' + d.queries.length + ')' })]);
+    const qc = el('section', { class: 'card' }, [el('h2', { text: '“Unsure?” to check (' + d.queries.length + ')' }),
+      el('p', { class: 'small', style: 'margin:0', text: 'A member does not understand the task, or thinks it is not for them. Reply (or edit the ask) and send it back, or take them off it.' })]);
     d.queries.forEach(x => {
-      const off = el('button', { class: 'btn', type: 'button', text: 'Take ' + x.scope + ' off this' });
-      const keep = el('button', { class: 'switch', type: 'button', text: 'It is theirs (I’ll explain)' });
-      const lock = b => { if (busy) return false; off.disabled = true; keep.disabled = true; b.textContent = 'Saving…'; return true; };
-      const unlock = e => { off.disabled = false; keep.disabled = false; off.textContent = 'Take ' + x.scope + ' off this'; keep.textContent = 'It is theirs (I’ll explain)'; fail(e); };
-      off.addEventListener('click', () => { if (lock(off)) call('pmRemoveOwner', [PM_KEY, x.id, x.scope], r => { data = r; renderPm(); toast('Removed from their list.'); }, unlock); });
-      keep.addEventListener('click', () => { if (lock(keep)) call('pmKeep', [PM_KEY, x.id, x.scope, ''], r => { data = r; renderPm(); toast('Back on their list with a note.'); }, unlock); });
+      const qkey = x.id + '|' + x.scope;
+      const reply = el('textarea', { rows: 2, placeholder: 'Your reply to ' + (x.byName || x.scope) + ' (optional)', 'aria-label': 'Your reply' });
+      reply.value = queryReply[qkey] || '';
+      reply.addEventListener('input', () => { queryReply[qkey] = reply.value; });
+      const off = el('button', { class: 'switch', type: 'button', text: 'Take ' + x.scope + ' off this' });
+      const keep = el('button', { class: 'btn', type: 'button', text: 'Send it back to ' + (x.byName || x.scope) });
+      const edit = el('button', { class: 'btn ghost', type: 'button', 'aria-label': 'Edit the ask first', title: 'Edit the ask first', onclick: () => { queryEditing[qkey] = true; renderPm(); } }, [L('pencil', tw('lbl_edit', 'Edit'))]);
+      const all = [off, keep, edit];
+      const lock = b => { if (busy) return false; all.forEach(c => { c.disabled = true; }); b.textContent = 'Saving…'; return true; };
+      const unlock = e => { renderPm(); fail(e); };
+      off.addEventListener('click', () => { if (lock(off)) call('pmRemoveOwner', [PM_KEY, x.id, x.scope], r => { delete queryReply[qkey]; data = r; renderPm(); toast('Removed from their list.'); }, unlock); });
+      keep.addEventListener('click', () => { if (lock(keep)) call('pmKeep', [PM_KEY, x.id, x.scope, reply.value.trim()], r => { delete queryReply[qkey]; data = r; renderPm(); toast('Sent back to them' + (reply.value.trim() ? ' with your reply.' : '.')); }, unlock); });
+      if (queryEditing[qkey]) {
+        // Edit the ask here, then it goes back to the member with the reply (or a plain "checked" note).
+        qc.append(el('div', {}, [
+          el('div', { class: 'small', text: x.byName ? x.byName + ' said: “' + (x.note || 'unsure') + '”' : '' }),
+          pmEditCard(x.edit, d, {
+            okLabel: 'Save and send it back', dropLabel: 'Remove the ask completely', onCancel: () => { delete queryEditing[qkey]; renderPm(); },
+            after: r => {
+              const still = (r.queries || []).some(q => q.id === x.id && q.scope === x.scope);
+              if (!still) { delete queryEditing[qkey]; data = r; renderPm(); toast('Saved.'); return; }
+              call('pmKeep', [PM_KEY, x.id, x.scope, (queryReply[qkey] || '').trim() || 'I’ve updated the ask.'], r2 => { delete queryEditing[qkey]; delete queryReply[qkey]; data = r2; renderPm(); toast('Saved and sent back.'); }, e => { data = r; renderPm(); fail(e); });
+            },
+          }),
+          el('div', { class: 'q' }, [el('label', { text: 'Your reply (optional)' }), reply]),
+        ]));
+        return;
+      }
       qc.append(el('div', { class: 'q' }, [
         el('div', { class: 'small', text: x.source + ' · asked by ' + x.by + (x.by !== x.scope ? ' for ' + x.scope : '') }),
         el('div', { text: x.ask }),
-        el('div', { class: 'inline' }, [off, keep]),
+        el('div', { class: 'note', style: 'margin:0', text: (x.byName || x.scope) + ' says: “' + (x.note || 'Unsure') + '”' }),
+        reply,
+        el('div', { class: 'inline' }, [keep, edit, off]),
       ]));
     });
     kids.push(qc);
