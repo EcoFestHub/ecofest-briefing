@@ -339,6 +339,13 @@ details.pfold[open] > summary { margin-bottom: 8px; }
 .agask .agbtns { border-top: 0; padding-top: 4px; }
 .agdone { background: var(--done-soft); color: var(--done); border-radius: 10px; padding: 12px 16px; font-weight: 600; }
 .agdone a { color: inherit; }
+/* minutes ticks (2.10): Decision / outcome? and Key date? on items and asks */
+.agflags { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.agflag { border: 1px dashed var(--muted); background: transparent; color: var(--muted); border-radius: 999px; padding: 2px 10px; font: inherit; font-size: calc(12px * var(--s)); cursor: pointer; }
+.agflag[aria-pressed="true"] { border-style: solid; border-color: var(--accent); background: var(--accent); color: var(--paper); font-weight: 600; }
+.agtag.agflagon { background: var(--accent); color: var(--paper); }
+.agdate { font: inherit; font-size: calc(13px * var(--s)); padding: 2px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); }
+.agr.agoutcome > .agcell { border-left: 3px solid var(--accent); padding-left: 8px; }
 @media (max-width: 520px) { .agl, .agr > .aglabin { flex-basis: 100%; padding-top: 0; } }
 </style>
 </head>
@@ -792,6 +799,17 @@ function renderBriefing() {
     kids.push(el('section', {}, [el('h2', { text: t('h_more') })].concat(b.more.map(r => el('details', { class: 'talk' }, [
       el('summary', { text: r[0] }),
       el('p', {}, [r[1] + ' ', r[2] ? el('a', { href: r[2], target: '_blank', rel: 'noopener', text: t('read_notes') }) : '']),
+    ])))));
+  }
+  // Sub-group meetings (agenda sub-meetings): their own minutes, kept apart from the main meeting's briefing above.
+  if ((data.subMeetings || []).length) {
+    const gist = rows => el('ul', { class: 'gist' }, rows.map(r => el('li', {}, [el('span', { class: 'k', text: r[0] }), el('span', { class: 'v', text: r[1] })])));
+    kids.push(el('section', {}, [el('h2', { text: tw('h_subs', 'Sub-group meetings') })].concat(data.subMeetings.map(s => el('details', { class: 'talk' }, [
+      el('summary', { text: s.group + ' · ' + s.meeting }),
+      s.landed.length ? gist(s.landed) : '',
+      s.dates.length ? gist(s.dates) : '',
+      ...s.more.map(r => el('p', {}, [el('b', { text: r[0] + ': ' }), r[1] + ' ', r[2] ? el('a', { href: r[2], target: '_blank', rel: 'noopener', text: t('read_notes') }) : ''])),
+      s.minutes ? el('p', {}, [el('a', { href: s.minutes, target: '_blank', rel: 'noopener', text: tw('sub_minutes', 'Minutes') + ' ↗' })]) : '',
     ])))));
   }
   if (data.progress.length) {
@@ -1349,12 +1367,14 @@ function briefReadCard(b) {
       er => { btn.disabled = false; btn.textContent = 'Take back to draft'; fail(er); });
   } });
   return el('div', { class: 'bf' }, [
-    el('div', { class: 'bf-head' }, [el('h3', { text: 'Meeting ' + b.meeting }), el('span', { class: 'chip done', text: 'Published' })]),
+    el('div', { class: 'bf-head' }, [el('h3', { text: briefTitle(b) }), el('span', { class: 'chip done', text: 'Published' })]),
     b.link ? el('p', { class: 'small', style: 'margin:0' }, [el('a', { href: b.link, target: '_blank', rel: 'noopener', text: 'Minutes' })]) : '',
     sec('Where we landed', b.landed), sec('Key dates', b.dates), sec('More', b.more, true),
     el('div', { class: 'acts' }, [el('button', { class: 'btn ghost', type: 'button', 'aria-label': 'Edit', title: 'Edit', onclick: () => { briefEditing[b.row] = true; renderPm(); } }, [L('pencil', tw('lbl_edit', 'Edit'))]), back]),
   ]);
 }
+/** A briefing's heading: sub-group minutes are labelled so they are never mistaken for the main meeting's. */
+function briefTitle(b) { return (b.sub ? 'Sub-meeting: ' + b.sub + ' · ' : 'Meeting ') + b.meeting + (b.fromAgenda ? ' (minutes from the agenda)' : ''); }
 function briefCard(b) {
   if (b.published && !briefEditing[b.row]) return briefReadCard(b);
   const d = briefDraft[b.row] || (briefDraft[b.row] = { link: b.link, landed: b.landed.map(r => r.slice()), dates: b.dates.map(r => r.slice()), more: b.more.map(r => r.slice()) });
@@ -1395,7 +1415,7 @@ function briefCard(b) {
     : el('button', { class: 'btn', type: 'button', text: 'Save and publish to members', onclick: e => act(e.currentTarget, true, 'Published. Members can see it now.') });
   const back = b.published ? el('button', { class: 'switch', type: 'button', text: 'Cancel', onclick: () => { delete briefDraft[b.row]; delete briefEditing[b.row]; renderPm(); } }) : '';
   return el('div', { class: 'bf' }, [
-    el('div', { class: 'bf-head' }, [el('h3', { text: 'Meeting ' + b.meeting }), el('span', { class: 'chip ' + (b.published ? 'done' : 'query'), text: b.published ? 'Published' : 'Draft, members cannot see it' })]),
+    el('div', { class: 'bf-head' }, [el('h3', { text: briefTitle(b) }), el('span', { class: 'chip ' + (b.published ? 'done' : 'query'), text: b.published ? 'Published' : 'Draft, members cannot see it' })]),
     el('div', { class: 'bf-link' }, [el('label', { for: 'bflink-' + b.row, text: 'Minutes link' }), link]),
     list('Where we landed', d.landed, ['', ''], ['Topic, e.g. Registration', 'What was decided']),
     list('Key dates', d.dates, ['', ''], ['Date, e.g. Tue 20 Oct', 'What happens']),
@@ -1682,6 +1702,10 @@ let ag = null, agPoll = null, agPreview = false, agPubArmed = false, agResult = 
 const agDirty = {}, agDirtyN = {}, agTO = {}, agGone = {}, agAskOpen = {}, agMin = {}, agTasks = {}, agNoteOpen = {}, agBackup = {}, agLinkEd = {};
 let agCol = {};
 try { agCol = JSON.parse(localStorage.getItem(PFX + 'AgCol') || '{}') || {}; } catch (e) {}
+// Which meeting this page is on: '' = the main meeting, else a sub-meeting key (S + 8 hex), from ?sub= in the address.
+let AG_SUB = '';
+try { const s0 = new URLSearchParams(location.search).get('sub') || ''; if (/^S[0-9a-f]{8}$/.test(s0)) AG_SUB = s0; } catch (e) {}
+let agSubForm = null, agSubDelArmed = false;
 
 /** A call that shows no loading pill: used for autosave and refresh. */
 function qcall(fn, args, ok, bad) {
@@ -1698,7 +1722,7 @@ const agQ = [];
 let agRun = false;
 const agBusy = () => agRun || agQ.length > 0 || Object.keys(agTO).length > 0;
 function agStatus() { const n = document.getElementById('ag-save'); if (n) n.textContent = agBusy() ? 'Saving…' : 'All saved'; }
-function agOp(op, ok, bad) { agQ.push([op, ok, bad]); agStatus(); agPump(); }
+function agOp(op, ok, bad) { if (op.sub === undefined && AG_SUB) op.sub = AG_SUB; agQ.push([op, ok, bad]); agStatus(); agPump(); }   // an edit stays with the meeting it was made on
 function agPump() {
   if (agRun || !agQ.length) return;
   agRun = true;
@@ -1709,12 +1733,15 @@ function agPump() {
 const agItem = id => ag && ag.items ? ag.items.find(x => x.id === id) : null;
 const agRO = () => ag.state === 'published';
 const agIsPm = () => ag.pm && !agPreview;
+/** Runs this meeting: the PM on the main meeting; on a sub-meeting, whoever started it or a PM. */
+const agLead = () => ag.sub ? !!ag.lead && !agPreview : agIsPm();
 const agUnits = () => ag.blocks || ag.groups;   // groups, or workstreams when AGENDA_BLOCKS = workstreams
-const agBlocksList = () => ['open', 'proj'].concat(agUnits(), ['park']);
-const agBlockName = id => id === 'meet' ? 'Meeting dates and chairs' : id === 'open' ? 'Opening' : id === 'proj' ? 'Project update' : id === 'park' ? 'Doesn’t have a place yet' : id;
+const agBlocksList = () => ag.sub ? ['open', 'sub'] : ['open', 'proj'].concat(agUnits(), ['park']);
+const agBlockName = id => id === 'meet' ? 'Meeting dates and chairs' : id === 'subs' ? 'Sub-meetings' : id === 'sub' ? (ag.sub ? ag.sub.name : 'Discussion') : id === 'open' ? 'Opening' : id === 'proj' ? 'Project update' : id === 'park' ? 'Doesn’t have a place yet' : id;
 function agShort(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return String(u).slice(0, 24); } }
 function agNewId() { const b = new Uint8Array(4); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(b) : b.forEach((_, i) => { b[i] = Math.floor(Math.random() * 256); }); return 'G' + Array.from(b).map(x => x.toString(16).padStart(2, '0')).join(''); }
 function agWhereFor(block, cur) {
+  if (ag.sub) return cur && ag.workstreams.indexOf(cur) >= 0 ? cur : (ag.workstreams.indexOf(ag.sub.where) >= 0 ? ag.sub.where : 'Not sure');
   if (agUnits().indexOf(block) >= 0) return block;
   if (block === 'proj') return cur && ag.workstreams.indexOf(cur) >= 0 && agUnits().indexOf(cur) < 0 ? cur : 'Not sure';
   return 'Not sure';
@@ -1750,7 +1777,7 @@ function agNoteEdit(askId, text) {
 }
 function agAdd(block, kind) {
   const id = agNewId();
-  const it = { id: id, block: block, kind: kind, text: '', link: '', label: kind === 'line' ? 'New line' : '', hidden: false, from: ag.me, to: '', where: kind === 'ask' ? agWhereFor(block, '') : '', by: '', askKind: 'task', ready: false, _new: true };
+  const it = { id: id, block: block, kind: kind, text: '', link: '', label: kind === 'line' ? 'New line' : '', hidden: false, from: ag.me, to: '', where: kind === 'ask' ? agWhereFor(block, '') : '', by: '', askKind: 'task', ready: false, outcome: false, keyDate: false, _new: true };
   ag.items.push(it);
   if (kind === 'ask') agAskOpen[id] = true;
   agFocus = (kind === 'ask' ? 'ag-a-' : 'ag-t-') + id;
@@ -1809,8 +1836,24 @@ function agCell(it, field, id, placeholder) {
   setTimeout(grow, 0);
   return ta;
 }
+/** A small on/off chip ("Decision / outcome?", "Key date?"). Read-only once published: shown only when on. */
+function agFlag(label, on, set, title) {
+  if (agRO()) return on ? el('span', { class: 'agtag agflagon', text: label.replace(/\?$/, '') }) : '';
+  return el('button', { type: 'button', class: 'agflag', 'aria-pressed': String(!!on), title: title, text: (on ? '✓ ' : '') + label, onclick: () => set(!on) });
+}
+/** Key date: the tick, and the date box when it is on (items keep their date in "by", like asks). */
+function agKeyDateCtl(it) {
+  const tick = agFlag('Key date?', it.keyDate, v => { agEdit(it.id, 'keyDate', v, true); renderAgenda(); }, 'Goes under the key dates in the minutes and the briefing');
+  if (!it.keyDate) return [tick];
+  if (agRO()) return [el('span', { class: 'agtag agflagon', text: 'Key date' + (it.by ? ': ' + dayWordsAg(it.by) : '') })];
+  const d = el('input', { type: 'date', class: 'agdate', 'aria-label': 'Key date', value: it.by || '' });
+  d.addEventListener('input', () => agEdit(it.id, 'by', d.value, true));
+  return [tick, d, it.by ? '' : el('span', { class: 'small', text: 'pick the date' })];
+}
+function dayWordsAg(iso) { const d = new Date(iso + 'T12:00:00'); return isNaN(d) ? iso : d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' }); }
 function agItemRow(it) {
-  return el('div', { class: 'agr' }, [agCell(it, 'text', 'ag-t-' + it.id, 'Type anything…'), agLinkCtl(it)].concat(agRO() ? [] : agArrows(it).concat([agMini('×', 'Delete this item', () => agDel(it.id))])));
+  const flags = el('div', { class: 'agflags' }, [agFlag('Decision / outcome?', it.outcome, v => { agEdit(it.id, 'outcome', v, true); renderAgenda(); }, 'Goes under "Where we landed" in the minutes and the briefing')].concat(agKeyDateCtl(it)));
+  return el('div', { class: 'agr agitem' + (it.outcome ? ' agoutcome' : '') }, [agCell(it, 'text', 'ag-t-' + it.id, 'Type anything…'), agLinkCtl(it)].concat(agRO() ? [] : agArrows(it).concat([agMini('×', 'Delete this item', () => agDel(it.id))]), [flags]));
 }
 function agLineRow(it) {
   const pm = agIsPm() && !agRO();
@@ -1837,7 +1880,7 @@ function agTasksRow(block, label) {
     const note = ag.notes[t.id] || '', showNote = agNoteOpen[t.id] || !!note;
     const kids = [el('div', { class: 'agtask' + (t.hidden ? ' agdim' : '') }, [el('span', { class: 'agtasktext' }, [t.text + ' ', el('span', { class: 'small', text: '· ' + t.who })]), t.hidden ? el('span', { class: 'agtag', text: 'hidden in agenda' }) : '', note ? el('span', { class: 'agtag', text: 'note held for PM' }) : '',
       agRO() ? '' : agBtn(showNote ? 'Hide note' : 'Add note', () => { agNoteOpen[t.id] = !showNote; renderAgenda(); }, 'sm'),
-      pm && !agRO() ? agBtn(t.hidden ? 'Show in agenda' : 'Hide from agenda', () => agHideTask(t.id, !t.hidden), 'sm') : ''])];
+      pm && !agRO() && !ag.sub ? agBtn(t.hidden ? 'Show in agenda' : 'Hide from agenda', () => agHideTask(t.id, !t.hidden), 'sm') : ''])];
     if (showNote) {
       const ta = el('textarea', { class: 'agnote', rows: '2', placeholder: 'A note for the PM. It stays here until the meeting is published.', 'aria-label': 'Note on ' + t.text, readonly: agRO() });
       ta.value = note;
@@ -1856,12 +1899,12 @@ function agAskCard(it) {
     el('button', { type: 'button', class: 'agfold', 'aria-expanded': String(!min), onclick: () => { agMin[it.id] = !min; renderAgenda(); } },
       [el('span', { class: 'agpm', 'aria-hidden': 'true', text: min ? '+' : '−' }), el('b', { text: it.askKind === 'ask' ? 'Ask' : 'Task' }), el('span', { class: 'small', text: ' · to ' + it.to + ' · ' + it.where })]),
   ].concat(agRO() ? [] : agArrows(it).concat([agBtn('Edit', () => {
-    agBackup[it.id] = { text: it.text, to: it.to, where: it.where, by: it.by, link: it.link, from: it.from, kind: it.askKind };
+    agBackup[it.id] = { text: it.text, to: it.to, where: it.where, by: it.by, link: it.link, from: it.from, kind: it.askKind, keyDate: it.keyDate };
     agAskOpen[it.id] = true; renderAgenda();
   }, 'sm'), agBtn('Delete', () => agDel(it.id), 'sm dng')])));
   return el('div', { class: 'agask' }, [head, min ? '' : el('div', { class: 'agaskbody' }, [
     el('div', { text: it.text }),
-    el('div', { class: 'small', text: (it.from ? 'from ' + (ag.people.find(p => p.name === it.from) || { display: it.from }).display : '') + (it.by ? ' · by ' + it.by : '') }),
+    el('div', { class: 'small', text: (it.from ? 'from ' + (ag.people.find(p => p.name === it.from) || { display: it.from }).display : '') + (it.by ? ' · by ' + it.by : '') + (it.keyDate ? ' · key date' : '') }),
     it.link ? agLinkCtl(it) : '',
   ])]);
 }
@@ -1886,6 +1929,7 @@ function agAskForm(it) {
   const by = el('input', { type: 'date', 'aria-label': 'By when' });
   by.value = it.by;
   by.addEventListener('input', () => agEdit(it.id, 'by', by.value, true));
+  const keyTick = agFlag('Key date?', it.keyDate, v => { agEdit(it.id, 'keyDate', v, true); renderAgenda(); }, 'Its by-when date goes under the key dates in the minutes and the briefing');
   const link = el('input', { type: 'url', placeholder: 'https://… (optional)', 'aria-label': 'Link' });
   link.value = it.link;
   link.addEventListener('input', () => agEdit(it.id, 'link', link.value));
@@ -1895,16 +1939,17 @@ function agAskForm(it) {
     if (!cur.text.trim() || !cur.to.trim()) { err.textContent = 'Say who it is for and what needs to happen.'; err.style.display = ''; return; }
     Object.keys(agTO).filter(k => k.indexOf(it.id) === 0).forEach(k => { clearTimeout(agTO[k]); delete agTO[k]; });
     cur.ready = true; agAskOpen[it.id] = false; delete agBackup[it.id];
-    agOp({ t: 'set', id: it.id, f: { text: cur.text, to: cur.to, where: cur.where, by: cur.by, link: cur.link, from: cur.from, kind: cur.askKind, ready: true } }, null,
+    if (cur.keyDate && !cur.by) { err.textContent = 'A key date needs a by-when date (or untick Key date).'; err.style.display = ''; return; }
+    agOp({ t: 'set', id: it.id, f: { text: cur.text, to: cur.to, where: cur.where, by: cur.by, link: cur.link, from: cur.from, kind: cur.askKind, keyDate: !!cur.keyDate, ready: true } }, null,
       e => { cur.ready = false; agAskOpen[it.id] = true; renderAgenda(); toast((e && e.message) || 'Could not save that ask.'); });
     renderAgenda();
   }, 'pri');
   const cancel = agBtn('Cancel', () => {
     const cur = agItem(it.id), bk = agBackup[it.id];
     if (!cur.ready || !bk) { agDel(it.id); return; }
-    Object.assign(cur, { text: bk.text, to: bk.to, where: bk.where, by: bk.by, link: bk.link, from: bk.from, askKind: bk.kind });
+    Object.assign(cur, { text: bk.text, to: bk.to, where: bk.where, by: bk.by, link: bk.link, from: bk.from, askKind: bk.kind, keyDate: !!bk.keyDate });
     agAskOpen[it.id] = false; delete agBackup[it.id];
-    agOp({ t: 'set', id: it.id, f: { text: bk.text, to: bk.to, where: bk.where, by: bk.by, link: bk.link, from: bk.from, kind: bk.kind } });
+    agOp({ t: 'set', id: it.id, f: { text: bk.text, to: bk.to, where: bk.where, by: bk.by, link: bk.link, from: bk.from, kind: bk.kind, keyDate: !!bk.keyDate } });
     renderAgenda();
   });
   const remove = it.ready ? agBtn('Delete', () => agDel(it.id), 'dng') : '';
@@ -1912,7 +1957,7 @@ function agAskForm(it) {
     el('b', { text: 'Add ask' }),
     el('div', { class: 'grid2' }, [fld('From', from), fld('Type', el('div', {}, [el('div', { class: 'toggle', role: 'group', 'aria-label': 'Type' }, [bT, bA]), help]))]),
     fld('To', owners.el), fld('The ask', text),
-    el('div', { class: 'grid2' }, [fld('Where it lives', where), fld('By when', by)]),
+    el('div', { class: 'grid2' }, [fld('Where it lives', where), fld('By when', el('div', { class: 'agflags' }, [by, keyTick]))]),
     fld('Link', link), err,
     el('div', { class: 'agbtns' }, [ready, cancel, remove]),
   ]);
@@ -1951,9 +1996,11 @@ function agMeetBody() {
 /* ---- blocks */
 function agBody(id) {
   if (id === 'meet') return agMeetBody();
-  const k = [], pm = agIsPm();
+  if (id === 'subs') return agSubsBody();
+  const k = [], pm = agIsPm(), lead = agLead();
   if (id === 'open') {
-    if (pm && !agRO()) {
+    if (ag.sub) k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Sub-meeting' }), el('span', { class: 'small', style: 'padding-top:6px', text: 'Started by ' + agDisplay(ag.sub.by) + (ag.sub.where ? ' · its asks go to ' + ag.sub.where : '') + '. Its minutes are kept apart from the main meeting’s; its asks go to the PM like any others.' })]));
+    else if (pm && !agRO()) {
       const ch = el('input', { class: 'agcell', value: ag.chair, placeholder: 'Who is chairing?', 'aria-label': 'Chair', list: 'ag-people' });
       ch.addEventListener('input', () => { ag.chair = ch.value; clearTimeout(agTO.chair); agTO.chair = setTimeout(() => { delete agTO.chair; agOp({ t: 'meta', f: 'chair', v: ag.chair }); }, 700); agStatus(); });
       k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Chair' }), ch, agPeopleList()]));
@@ -1964,25 +2011,73 @@ function agBody(id) {
       k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Karakia' }), inp]));
     }
     const chips = (kind, who) => ag.people.map(p => {
-      const on = ag[kind].indexOf(p.name) >= 0, can = !agRO() && (kind === 'apol' ? pm : (pm || p.name === ag.me));
+      const on = ag[kind].indexOf(p.name) >= 0, can = !agRO() && (kind === 'apol' ? lead : (lead || p.name === ag.me));
       return el('button', { type: 'button', class: 'agchip' + (kind === 'apol' ? ' warm' : ''), 'aria-pressed': String(on), onclick: () => { if (can) agToggle(kind, p.name); }, style: can ? '' : 'cursor:default', text: p.display + (kind === 'present' && p.name === ag.me ? ' (you)' : '') });
     });
-    k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Present' }), el('div', {}, [el('div', { class: 'agchips' }, chips('present')), el('div', { class: 'small', text: pm ? 'Tap a name to mark them present.' : 'Tap your own name.' })])]));
-    k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Apologies' }), el('div', {}, [el('div', { class: 'agchips' }, chips('apol')), el('div', { class: 'small', text: pm ? 'Chair: tap a name to record an apology.' : 'The chair adds apologies.' })])]));
-    k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Minutes and agenda' }),
-      el('button', { type: 'button', class: 'agchip', 'aria-pressed': String(ag.minutesOk), style: pm && !agRO() ? '' : 'cursor:default', text: ag.minutesOk ? 'Confirmed' : (pm ? 'Tap to confirm' : 'Not yet confirmed'), onclick: () => { if (pm && !agRO()) { ag.minutesOk = !ag.minutesOk; agOp({ t: 'meta', f: 'minutes', v: ag.minutesOk }); renderAgenda(); } } }),
-      ag.minutesLink ? el('a', { class: 'aglk', href: ag.minutesLink, target: '_blank', rel: 'noopener', text: 'Last meeting’s minutes ↗' }) : '']));
-    k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Lightning updates' }), el('span', { class: 'small', style: 'padding-top:6px', text: 'Go round the room: what has everyone been up to? Add an item or an ask below if something comes out of it.' })]));
+    k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Present' }), el('div', {}, [el('div', { class: 'agchips' }, chips('present')), el('div', { class: 'small', text: lead ? 'Tap a name to mark them present.' : 'Tap your own name.' })])]));
+    k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Apologies' }), el('div', {}, [el('div', { class: 'agchips' }, chips('apol')), el('div', { class: 'small', text: lead ? 'Chair: tap a name to record an apology.' : 'The chair adds apologies.' })])]));
+    if (!ag.sub) {
+      k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Minutes and agenda' }),
+        el('button', { type: 'button', class: 'agchip', 'aria-pressed': String(ag.minutesOk), style: pm && !agRO() ? '' : 'cursor:default', text: ag.minutesOk ? 'Confirmed' : (pm ? 'Tap to confirm' : 'Not yet confirmed'), onclick: () => { if (pm && !agRO()) { ag.minutesOk = !ag.minutesOk; agOp({ t: 'meta', f: 'minutes', v: ag.minutesOk }); renderAgenda(); } } }),
+        ag.minutesLink ? el('a', { class: 'aglk', href: ag.minutesLink, target: '_blank', rel: 'noopener', text: 'Last meeting’s minutes ↗' }) : '']));
+      k.push(el('div', { class: 'agr' }, [el('span', { class: 'agl', text: 'Lightning updates' }), el('span', { class: 'small', style: 'padding-top:6px', text: 'Go round the room: what has everyone been up to? Add an item or an ask below if something comes out of it.' })]));
+    }
+    if (!agRO()) k.push(el('p', { class: 'small', style: 'margin:4px 0 0', text: 'Items are the discussion. Tick “Decision / outcome?” on an item to put it under “Where we landed”, and “Key date?” on an item or ask to put it under the key dates. When the meeting is closed these become the minutes and the briefing.' }));
   }
   if (id === 'proj') {
     ag.items.filter(x => x.kind === 'line' && (pm || !x.hidden)).forEach(x => k.push(agLineRow(x)));
     if (pm && !agRO()) k.push(el('div', { class: 'agr' }, [agBtn('+ Add a line', () => agAdd('proj', 'line'), 'sm'), el('span', { class: 'small', text: 'PM only. Hide a line in a month with nothing to say; members won’t see it.' })]));
     k.push(agTasksRow('proj', 'Outstanding items'));
-  } else if (agUnits().indexOf(id) >= 0) k.push(agTasksRow(id, 'Open tasks'));
+  } else if (id === 'sub') k.push(agTasksRow('sub', 'Open tasks' + (ag.sub && ag.sub.where ? ' in ' + ag.sub.where : '')));
+  else if (agUnits().indexOf(id) >= 0) k.push(agTasksRow(id, 'Open tasks'));
   const mine = ag.items.filter(x => x.block === id && x.kind !== 'line');
   mine.filter(x => x.kind === 'item').forEach(x => k.push(agItemRow(x)));
   mine.filter(x => x.kind === 'ask').forEach(x => k.push(x.ready && !agAskOpen[x.id] ? agAskCard(x) : agAskForm(x)));
   if (!agRO()) k.push(el('div', { class: 'agbtns' }, [agBtn('+ Add item', () => agAdd(id, 'item')), agBtn('+ Add ask', () => agAdd(id, 'ask'))]));
+  return k;
+}
+const agDisplay = n => ((ag.people || []).find(p => p.name === n) || { display: n }).display || n;
+
+/* ---- sub-meetings: any member can start one; its starter (or a PM) closes it */
+function agGo(sub) {
+  if (agBusy()) { toast('Still saving. Try again in a moment.'); return; }
+  AG_SUB = sub || '';
+  ag = null; agPubArmed = false; agResult = null; agSubDelArmed = false; agPreview = false;
+  try { const u = new URL(location.href); if (AG_SUB) u.searchParams.set('sub', AG_SUB); else u.searchParams.delete('sub'); history.replaceState(null, '', u.toString()); } catch (e) {}
+  loadAgenda();
+}
+function agSubsBody() {
+  const k = [];
+  const list = (ag.subs || []);
+  if (list.length) list.forEach(s => k.push(el('div', { class: 'agr agsubrow' }, [
+    el('span', { class: 'agl', text: s.label.replace(/ \d{4}$/, '') }),
+    el('span', { style: 'padding-top:6px' }, [el('b', { text: s.name }), el('span', { class: 'small', text: ' · started by ' + s.by + ' · ' + (s.state === 'published' ? 'closed, minutes out' : 'open') })]),
+    agBtn('Open', () => agGo(s.id), 'sm'),
+  ])));
+  else k.push(el('p', { class: 'small', style: 'margin:0', text: 'No sub-meetings yet.' }));
+  if (!agSubForm) {
+    k.push(el('div', { class: 'agbtns' }, [agBtn('+ Start a sub-meeting', () => { agSubForm = { name: '', date: new Date().toLocaleDateString('en-CA'), where: '' }; agFocus = 'ag-subname'; renderAgenda(); }, 'pri')]));
+    k.push(el('p', { class: 'small', style: 'margin:0', text: 'For a smaller group meeting on its own (a working group, a team). It gets its own agenda and minutes, listed separately from the main meeting. Its asks still go to the PM straight away when it is closed.' }));
+    return k;
+  }
+  const f = agSubForm;
+  const name = el('input', { class: 'agcell', id: 'ag-subname', placeholder: 'Name, e.g. Venue team', 'aria-label': 'Sub-meeting name', value: f.name, maxlength: '60' });
+  name.addEventListener('input', () => { f.name = name.value; });
+  const date = el('input', { type: 'date', 'aria-label': 'Date', value: f.date });
+  date.addEventListener('input', () => { f.date = date.value; });
+  const where = el('select', { 'aria-label': 'Where its asks go' }, [el('option', { value: '', text: 'Not sure / several' })].concat((ag.workstreams || []).map(w => el('option', { value: w, text: w }))));
+  where.value = f.where;
+  where.addEventListener('change', () => { f.where = where.value; });
+  const go = agBtn('Start it', () => {
+    if (!f.name.trim()) { toast('Give it a name.'); return; }
+    go.disabled = true;
+    agOp({ t: 'substart', name: f.name, date: f.date, where: f.where, sub: '' }, r => { agSubForm = null; toast('Sub-meeting started. Share this page’s link with its members.'); setTimeout(() => agGo(r.sub), 0); },
+      e => { go.disabled = false; toast((e && e.message) || 'Could not start it.'); });
+  }, 'pri');
+  k.push(el('div', { class: 'agask agform' }, [el('b', { text: 'Start a sub-meeting' }),
+    el('div', { class: 'grid2' }, [el('div', { class: 'field' }, [el('span', { class: 'lab', text: 'Name' }), name]), el('div', { class: 'field' }, [el('span', { class: 'lab', text: 'Date' }), date])]),
+    (ag.workstreams || []).length ? el('div', { class: 'field' }, [el('span', { class: 'lab', text: 'Where its asks usually go' }), where]) : '',
+    el('div', { class: 'agbtns' }, [go, agBtn('Cancel', () => { agSubForm = null; renderAgenda(); })])]));
   return k;
 }
 function agColour(id) {
@@ -1992,10 +2087,11 @@ function agColour(id) {
 }
 function agInk(hex) { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) > 150 ? '#15211c' : '#ffffff'; }   // amber/yellow get dark text
 function agBlock(id) {
-  const col = id === 'meet' ? agCol.meet !== false : !!agCol[id];   // the PM's dates panel starts folded
+  const col = id === 'meet' || id === 'subs' ? agCol[id] !== false && !(id === 'subs' && agSubForm) : !!agCol[id];   // the dates and sub-meetings panels start folded
   let sub = '';
   if (agUnits().indexOf(id) >= 0) { const d = ag.done[id] || 0, o = ag.tasks.filter(t => t.block === id && !t.hidden).length; sub = ' · ' + d + ' action' + (d === 1 ? '' : 's') + ' done, ' + o + ' open'; }
-  const head = el('button', { type: 'button', class: 'agh', 'aria-expanded': String(!col), onclick: () => { agCol[id] = !col; try { localStorage.setItem(PFX + 'AgCol', JSON.stringify(agCol)); } catch (e) {} renderAgenda(); } },
+  if (id === 'subs') { const open = (ag.subs || []).filter(s => s.state !== 'published').length; sub = ' · ' + (open ? open + ' open' : 'start one for a smaller group'); }
+  const head = el('button', { type: 'button', class: 'agh', 'aria-expanded': String(!col), onclick: () => { agCol[id] = !col; if (id === 'subs' && col === false) agSubForm = null; try { localStorage.setItem(PFX + 'AgCol', JSON.stringify(agCol)); } catch (e) {} renderAgenda(); } },
     [el('span', { class: 'agchev', 'aria-hidden': 'true', text: col ? '▸' : '▾' }), el('span', {}, [agBlockName(id), el('span', { class: 'agsub', text: sub })])]);
   const c = agColour(id);
   return el('section', { class: 'agb', style: c ? '--bc:' + c + ';--bi:' + agInk(c) : '' }, [head, col ? '' : el('div', { class: 'agbody' }, agBody(id))]);
@@ -2004,42 +2100,61 @@ function agBlock(id) {
 function agBarText() {
   const asks = ag.items.filter(x => x.kind === 'ask'), ready = asks.filter(x => x.ready).length, left = asks.length - ready;
   const notes = Object.keys(ag.notes).filter(k => String(ag.notes[k] || '').trim()).length;
-  return ready + ' ask' + (ready === 1 ? '' : 's') + ' and ' + notes + ' note' + (notes === 1 ? '' : 's') + ' ready' + (left ? ' · ' + left + ' unfinished (left out)' : '');
+  const outs = ag.items.filter(x => x.kind === 'item' && x.outcome && String(x.text || '').trim()).length;
+  return ready + ' ask' + (ready === 1 ? '' : 's') + ', ' + outs + ' outcome' + (outs === 1 ? '' : 's') + ' and ' + notes + ' note' + (notes === 1 ? '' : 's') + ' ready' + (left ? ' · ' + left + ' unfinished ask' + (left === 1 ? '' : 's') + ' (left out)' : '');
 }
 function agPublish() {
   if (agBusy()) { toast('Still saving. Try again in a moment.'); return; }
-  call('agendaPublish', [PM_KEY], r => { agResult = r; agPubArmed = false; ag.state = 'published'; renderAgenda(); },
+  call('agendaPublish', [PM_KEY, AG_SUB, getMe()], r => { agResult = r; agPubArmed = false; ag.state = 'published'; ag.ownMinutes = r.minutes || ag.ownMinutes; renderAgenda(); },
     e => { agPubArmed = false; fail(e); renderAgenda(); });
+}
+/** What closing the meeting did: asks to the PM, notes held back, the briefing and the minutes Doc. */
+function agDoneText(r) {
+  const s = n => (n === 1 ? '' : 's');
+  const queue = ag.pm ? 'your queue' : 'the PM to confirm';
+  const out = ['Closed. ', r.asks + ' ask' + s(r.asks) + ' sent to ' + queue + ', ', r.notes + ' note' + s(r.notes) + ' held back for the PM',
+    r.left ? ', ' + r.left + ' unfinished ask' + s(r.left) + ' left out' : '', '. '];
+  if (r.briefing) out.push((ag.sub ? 'Its minutes are listed under “Sub-group meetings” on everyone’s briefing' : 'The briefing now shows these minutes') + ' (' + r.outcomes + ' outcome' + s(r.outcomes) + ', ' + r.keyDates + ' key date' + s(r.keyDates) + '). ');
+  if (r.minutes) out.push(el('a', { href: r.minutes, target: '_blank', rel: 'noopener', text: 'Minutes Doc ↗' }));
+  if (r.minutesNote) out.push(' ' + r.minutesNote);
+  return out;
 }
 function renderAgenda() {
   if (!ag) return;
   const kids = [];
   if (MODE !== 'pm') kids.push(navBar());
-  const pm = agIsPm(), draft = ag.state === 'draft';
-  const state = ag.state === 'published' ? 'Published and closed' : draft ? (ag.pm ? 'Draft: only you can see this' : 'Not open yet') : 'Open: everyone can add and edit';
-  kids.push(el('header', {}, [el('div', { class: 'eyebrow', text: ORG + ' · meeting agenda' }), el('h1', {}, ['Meeting ', el('em', { text: 'agenda' })]),
+  const pm = agIsPm(), lead = agLead(), draft = ag.state === 'draft';
+  const state = ag.state === 'published' ? 'Closed, minutes made' : draft ? (ag.pm ? 'Draft: only you can see this' : 'Not open yet') : 'Open: everyone can add and edit';
+  kids.push(el('header', {}, [el('div', { class: 'eyebrow', text: ORG + (ag.sub ? ' · sub-meeting' : ' · meeting agenda') }), el('h1', {}, ag.sub ? [ag.sub.name + ' ', el('em', { text: 'sub-meeting' })] : ['Meeting ', el('em', { text: 'agenda' })]),
     el('p', { class: 'small', style: 'margin:8px 0 0', text: ag.meetingLabel + ' · ' + state })]));
   const top = [];
-  if (ag.pm) top.push(agBtn(agPreview ? 'Back to PM view' : 'Preview as member', () => { agPreview = !agPreview; renderAgenda(); }));
-  if (pm && ag.state === 'published') top.push(agBtn('Reopen for editing', () => agSetState('shared'), 'pri'));
-  else if (pm) top.push(agBtn(draft ? 'Share with the team' : 'Back to draft', () => agSetState(draft ? 'shared' : 'draft'), draft ? 'pri' : ''));
+  if (ag.sub) top.push(agBtn('← Main meeting agenda', () => agGo('')));
+  if (ag.pm && !ag.sub) top.push(agBtn(agPreview ? 'Back to PM view' : 'Preview as member', () => { agPreview = !agPreview; renderAgenda(); }));
+  if (lead && ag.state === 'published') top.push(agBtn('Reopen for editing', () => agSetState('shared'), 'pri'));
+  else if (pm && !ag.sub) top.push(agBtn(draft ? 'Share with the team' : 'Back to draft', () => agSetState(draft ? 'shared' : 'draft'), draft ? 'pri' : ''));
+  else if (lead && ag.sub) top.push(agBtn(agSubDelArmed ? 'Tap again to remove it' : 'Remove this sub-meeting', () => {
+    if (!agSubDelArmed) { agSubDelArmed = true; renderAgenda(); return; }
+    agOp({ t: 'state', v: 'removed' }, () => { toast('Sub-meeting removed.'); setTimeout(() => agGo(''), 0); }, e => { agSubDelArmed = false; toast((e && e.message) || 'Could not remove it.'); renderAgenda(); });
+  }, agSubDelArmed ? 'dng' : ''));
   if (top.length || ag.items) top.push(el('span', { class: 'small', id: 'ag-save', text: agBusy() ? 'Saving…' : 'All saved' }));
   kids.push(el('div', { class: 'agtop' }, top));
+  if (!ag.sub) kids.push(agBlock('subs'));   // sub-meetings: open to every member, even while the main agenda is a draft
   if (!ag.items) {
     kids.push(el('section', { class: 'card' }, [el('h2', { text: 'The agenda isn’t open yet' }), el('p', { class: 'muted', style: 'margin:0', text: 'You’ll be able to add to it once the PM shares it. This page checks by itself.' })]));
     app.replaceChildren(...kids);
+    if (agFocus) { const n = document.getElementById(agFocus); agFocus = ''; if (n) n.focus(); }
     return;
   }
   if (ag.state === 'published') {
     const r = agResult;
-    kids.push(el('div', { class: 'agdone' }, r && ag.pm ? ['Published. ', r.asks + ' ask' + (r.asks === 1 ? '' : 's') + ' sent to your queue, ', r.notes + ' note' + (r.notes === 1 ? '' : 's') + ' held back for you to check',
-      r.left ? ', ' + r.left + ' unfinished ask' + (r.left === 1 ? '' : 's') + ' left out' : '', '. ',
-      r.minutes ? el('a', { href: r.minutes, target: '_blank', rel: 'noopener', text: 'Agenda added to the minutes ↗' }) : (r.minutesNote || '')] : 'This meeting is published and closed.'));
+    kids.push(el('div', { class: 'agdone' }, r && lead ? agDoneText(r) : [ag.sub ? 'This sub-meeting is closed and its minutes are out. ' : 'This meeting is closed and its minutes are out. ',
+      ag.ownMinutes ? el('a', { href: ag.ownMinutes, target: '_blank', rel: 'noopener', text: 'Minutes ↗' }) : '']));
   }
   if (pm && ag.trackerOn) kids.push(agBlock('meet'));
   agBlocksList().forEach(id => kids.push(agBlock(id)));
-  if (pm && ag.state === 'shared') {
-    const go = agBtn(agPubArmed ? 'Tap again to publish' : 'Publish and close meeting', () => { if (!agPubArmed) { if (agBusy()) { toast('Still saving. Try again in a moment.'); return; } agPubArmed = true; renderAgenda(); } else agPublish(); }, 'pri');
+  if (lead && ag.state === 'shared') {
+    const label = ag.sub ? 'Close the sub-meeting and make its minutes' : 'Publish and close meeting';
+    const go = agBtn(agPubArmed ? 'Tap again to close it' : label, () => { if (!agPubArmed) { if (agBusy()) { toast('Still saving. Try again in a moment.'); return; } agPubArmed = true; renderAgenda(); } else agPublish(); }, 'pri');
     kids.push(el('div', { class: 'batch' }, [el('span', { id: 'ag-bar', text: agBarText() }), go,
       agPubArmed ? agBtn('Not yet', () => { agPubArmed = false; renderAgenda(); }) : '']));
   }
@@ -2050,7 +2165,7 @@ function renderAgenda() {
 
 /* ---- loading and keeping fresh */
 function agMerge(d) {
-  if (!ag || !ag.items || !d.items) { ag = d; return; }
+  if (!ag || !ag.items || !d.items || ag.meeting !== d.meeting) { ag = d; return; }
   const local = {};
   ag.items.forEach(x => { local[x.id] = x; });
   d.items = d.items.filter(s => !agGone[s.id]);
@@ -2061,10 +2176,15 @@ function agMerge(d) {
 }
 const agTyping = () => { const a = document.activeElement; return !!(a && app.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
 function agTick() {
-  if (VIEW !== 'agenda' || document.hidden || agBusy() || busy) return;
-  qcall('agendaGet', [getMe(), PM_KEY], d => { if (VIEW !== 'agenda' || agBusy()) return; agMerge(d); if (!agTyping()) renderAgenda(); }, () => {});
+  if (VIEW !== 'agenda' || document.hidden || agBusy() || busy || !ag) return;
+  const sub = AG_SUB;
+  qcall('agendaGet', [getMe(), PM_KEY, sub], d => { if (VIEW !== 'agenda' || agBusy() || sub !== AG_SUB) return; agMerge(d); if (!agTyping()) renderAgenda(); }, () => {});
 }
-function loadAgenda() { call('agendaGet', [getMe(), PM_KEY], d => { agMerge(d); renderAgenda(); clearInterval(agPoll); agPoll = setInterval(agTick, 8000); }); }
+function loadAgenda() {
+  const sub = AG_SUB;
+  call('agendaGet', [getMe(), PM_KEY, sub], d => { if (sub !== AG_SUB) return; agMerge(d); renderAgenda(); clearInterval(agPoll); agPoll = setInterval(agTick, 8000); },
+    e => { if (sub) { AG_SUB = ''; toast((e && e.message) || 'That sub-meeting was not found.'); loadAgenda(); } else fail(e); });
+}
 function renderAgendaPage() { if (ag) { renderAgenda(); agTick(); } else loadAgenda(); }
 function agendaUrl() { return pmUrl() + '&view=agenda'; }
 
