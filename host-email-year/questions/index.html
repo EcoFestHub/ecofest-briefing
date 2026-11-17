@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Host comms questions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: one search box on top, best matches below it, then every question grouped by topic. */
+:root {
+  --bg: #f6f8f7; --surface: #ffffff; --ink: #15241d; --ink-soft: #4b5d54; --line: #d5dfda;
+  --accent: #1e6b50; --chip: #e8efeb; --hit: #fff6d6;
+  --f-head: "Space Grotesk", system-ui, sans-serif; --f-body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1914; --surface: #17251e; --ink: #e8f0ec; --ink-soft: #a5b8ae; --line: #2b3d34;
+    --accent: #5fc79c; --chip: #213429; --hit: #3a3417; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1914; --surface: #17251e; --ink: #e8f0ec; --ink-soft: #a5b8ae; --line: #2b3d34;
+  --accent: #5fc79c; --chip: #213429; --hit: #3a3417; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 820px; margin: 0 auto; }
+nav { display: flex; gap: 16px; font-size: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+nav a { color: var(--accent); text-decoration: none; font-weight: 500; }
+nav a[aria-current] { color: var(--ink); border-bottom: 2px solid var(--accent); }
+h1, h2, h3 { font-family: var(--f-head); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); letter-spacing: -0.02em; }
+h2 { font-size: 20px; margin-top: 44px; }
+.lede { color: var(--ink-soft); margin: 10px 0 0; max-width: 60ch; font-size: 16px; }
+form { margin-top: 24px; display: flex; gap: 8px; }
+input[type=search] {
+  flex: 1; min-width: 0; font: inherit; font-size: 16px; padding: 12px 14px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+button { font: inherit; cursor: pointer; }
+.go { background: var(--accent); color: var(--bg); border: 0; border-radius: 8px; padding: 0 18px; font-weight: 600; }
+button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.examples { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--ink-soft); align-items: center; }
+.examples button { background: var(--chip); border: 0; border-radius: 14px; padding: 4px 12px; color: var(--ink); font-size: 13px; }
+#results { margin-top: 24px; display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; min-width: 0; }
+.card.best { border-color: var(--accent); }
+.card h3 { font-size: 17px; }
+.card .topic { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
+.ans p { margin: 8px 0 0; } .ans ul, .ans ol { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+.none { background: var(--hit); border-radius: 10px; padding: 14px 16px; }
+.none button { margin-top: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; color: var(--ink); }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin-top: 8px; }
+summary { padding: 12px 16px; font-weight: 500; cursor: pointer; }
+details .ans { padding: 0 16px 14px; }
+.topic-title { margin-top: 28px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+footer { margin-top: 40px; font-size: 13px; color: var(--ink-soft); }
+@media (max-width: 480px) { form { flex-direction: column; } .go { padding: 12px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a href="../">Host email year</a><a href="./" aria-current="page">Questions</a></nav>
+  <h1>Questions about host emails</h1>
+  <p class="lede">Type a question in your own words and the best answers show up below. This searches the answers written here. It does not make up new ones.</p>
+
+  <form id="f" role="search">
+    <input id="q" type="search" placeholder="For example: why did someone get two copies?" aria-label="Your question" autocomplete="off">
+    <button class="go" type="submit">Find answer</button>
+  </form>
+  <div class="examples">Try: <button type="button" data-ex="a host says they get two emails">two emails</button><button type="button" data-ex="how do I stop a host getting weekly emails">stop weekly emails</button><button type="button" data-ex="a host registered but is not in the week list">missing from week list</button></div>
+
+  <div id="results" aria-live="polite"></div>
+
+  <h2>All questions</h2>
+  <div id="all"></div>
+
+  <footer>Not answered here? Ask Dan, and the answer gets added to this page.</footer>
+</div>
+
+<script>
+var FAQ = [
+ { t: 'Sending', q: 'Why do emails go to a segment and not a tag?', k: 'segment tag send audience recipients',
+   a: '<p>A tag is a fact about a person (registered in 2027, event in week 3). A segment is a saved rule built from tags, and it updates itself. If you send to a segment, people who register drop out of the reminder automatically. If you send to a tag, you have to remember to change who is in it.</p><p>So the rule is: tags record, segments send.</p>' },
+ { t: 'Sending', q: 'How do I reuse last year’s email?', k: 'replicate copy duplicate last year template folder schedule',
+   a: '<ol><li>Campaigns, find last year’s version (folder 2026), choose Replicate.</li><li>Move the copy into the folder 2027 hosts.</li><li>Change the dates, year and links. Send a test to yourself.</li><li>Under To, choose Audience, then Segment, then the right saved segment.</li><li>Schedule it. The <a href="../">Host email year</a> page lists the segment for each email.</li></ol>' },
+ { t: 'Sending', q: 'Which segment goes with which email?', k: 'segment reminder week wrap up thank you report',
+   a: '<ul><li>January and February reminders: <b>Registration reminder audience 2027</b></li><li>Week event prep and feedback: <b>Week 1 hosts 2027</b> to <b>Week 5 hosts 2027</b></li><li>End-April thank-you: <b>Hosts 2027 (all)</b></li><li>May report: <b>Wrap up audience 2027</b></li></ul><p>The timeline page has a table of all the segments and who is in each.</p>' },
+ { t: 'Sending', q: 'When do I use stop-rego-nudges?', k: 'stop nudges reminders chase register',
+   a: '<p>After the February close-soon email, add the tag <b>stop-rego-nudges</b> to anyone you do not want to chase again. It is a fact about them, so it is a tag, and you can leave it off the segment you use next.</p>' },
+ { t: 'People and tags', q: 'A host registered but is not in the week segment. What do I check?', k: 'missing week segment tag host-2027 registered zapier not showing',
+   a: '<p>Open the person in Mailchimp and look at their tags. A registered host needs <b>host-2027</b> and a <b>week-2027-N</b> tag for their week.</p><ul><li>If a tag is missing, add it by hand.</li><li>Tell Dan. The tagging at registration may have failed, and it needs fixing so the next person does not miss out.</li></ul>' },
+ { t: 'People and tags', q: 'What does each tag mean?', k: 'tags glossary host-2027 week interested-host network-amplifier hub-kp host-prior',
+   a: '<ul><li><b>host-2027</b>: registered an event for 2027</li><li><b>week-2027-1 to 5</b>: which festival week their event is in</li><li><b>interested-host</b>: ticked that they are interested in hosting</li><li><b>network-amplifier</b>: shares EcoFest with their network</li><li><b>hub-kp</b>: belongs to the Kaipātiki hub</li><li><b>host-prior</b>: hosted in an earlier year (added at the yearly restart)</li><li><b>stop-rego-nudges</b>: do not send more register-now emails</li></ul>' },
+ { t: 'People and tags', q: 'What is the difference between Update preferences and Unsubscribe?', k: 'unsubscribe preferences opt out leave list group event host festival-goer',
+   a: '<p><b>Unsubscribe</b> removes the person from the whole audience, so they also lose the host emails.</p><p><b>Update preferences</b> lets them untick a group. Untick Festival-goer and they stop the public newsletter but stay a host. Untick Event Host and they stop the host emails but keep the newsletter.</p><p>Tell hosts to use Update preferences. The host emails say so.</p>' },
+ { t: 'People and tags', q: 'How do I stop a host getting the weekly host emails?', k: 'stop weekly host emails fewer no longer opt out remove as host event host group',
+   a: '<p>Ask them to use <b>Update preferences</b> at the bottom of any email and untick <b>Event Host</b>. They drop out of the host segments but stay on the newsletter. Do not ask them to unsubscribe, because that removes them from everything.</p><p>If they simply did not register this year, they only get the registrations-open style emails next year anyway.</p>' },
+ { t: 'People and tags', q: 'Someone unsubscribed by mistake. Can we add them back?', k: 'unsubscribed mistake re-add resubscribe back',
+   a: '<p>No. Someone who unsubscribes from the regional list has to sign up again themselves, because we cannot re-subscribe them without their consent. Ask them to use the sign-up form again.</p><p>In the host list sheet they stay out of the audiences while their status is Unsubscribed.</p>' },
+ { t: 'Two lists', q: 'Why did a host get two copies of the same email?', k: 'two copies duplicate double twice both lists hub regional',
+   a: '<p>They are probably on both the regional list and the Kaipātiki list. Mailchimp counts them as two contacts and does not know they are the same person.</p><p>The host list sheet handles this: the <b>In regional list?</b> column shows who is also in the regional audience, and the <b>Audiences</b> tab leaves those people out of the local send, because regional sends its own version.</p>' },
+ { t: 'Two lists', q: 'Who gets added to the Kaipātiki list from the regional list?', k: 'hub opt-in kaipatiki add copy regional consent ticked',
+   a: '<p>Only people who ticked Kaipātiki on the regional sign-up question “Would you also like email updates from a hub?”. Nobody else from the regional list is copied across.</p>' },
+ { t: 'Two lists', q: 'What do I do with the Hub opt-ins to add tab?', k: 'hub opt-ins add paste mark added clear tab',
+   a: '<ol><li>Paste the people on that tab into the Kaipātiki Mailchimp. If some are already there with newer details, choose add new only so you do not overwrite them.</li><li>In the sheet use Host list, then Mark hub opt-ins as added. This puts them in Contacts as Active (hub opt-in) and clears the tab.</li></ol><p>Do not clear the tab by hand. If you do, the same people appear again next run because they are not in Contacts yet.</p>' },
+ { t: 'Two lists', q: 'Why does the same hub opt-in not come back every week?', k: 'again every week repeat reappear hub opt-in contacts already',
+   a: '<p>The tab only lists people who chose Kaipātiki and are not already in Contacts or Suppression. Once you mark them as added they are in Contacts, so they do not show up again. Only new opt-ins appear.</p>' },
+ { t: 'Host list sheet', q: 'What do the Local status values mean?', k: 'status active to check regional only asked off unsubscribed removed',
+   a: '<ul><li><b>Active</b>: can be emailed from Kaipātiki</li><li><b>Active (hub opt-in)</b>: added because they chose Kaipātiki</li><li><b>To check</b>: someone needs to decide (no email address, or not on the old emailing list)</li><li><b>Regional only</b>: never emailed from Kaipātiki</li><li><b>Asked off</b> and <b>Unsubscribed</b>: never emailed, and listed on the Suppression tab</li><li><b>Removed</b>: taken off after the clean-up rules</li></ul>' },
+ { t: 'Host list sheet', q: 'Someone’s email is out of date. What do I change?', k: 'outdated email wrong change update correct contact moved left',
+   a: '<p>Change it on the Contacts tab. If that person is in the regional list, a row appears on the <b>Updates for Mailchimp</b> tab. Copy columns A to D into the regional Mailchimp import and choose Update existing contacts, then put Y in Done.</p><p>For a changed email address Mailchimp adds the new address as a new contact and leaves the old one, so the old address has to be archived in Mailchimp by hand. The tab lists it for you.</p>' },
+ { t: 'Host list sheet', q: 'What is the weekly summary email?', k: 'weekly summary email monday report counts',
+   a: '<p>Every Monday morning the sheet refreshes from Mailchimp, checks the changes, builds the send audiences and emails a summary. It says how many people unsubscribed, how many registered, how many hub opt-ins are waiting, how many To check rows there are, and how many corrections are waiting for Mailchimp.</p><p>In report only mode it changes nothing in the sheet, it only tells you.</p>' },
+ { t: 'Host list sheet', q: 'What are the colours in the old notes column?', k: 'colour color highlight green pink yellow orange notes old key',
+   a: '<p>The old file kept notes as cell colours. They are now plain highlights on the email and the Notes from FY26 cell, with the meaning written in Other notes. Light green meant planning events, medium green an event booked, pink displays only, and dark green a video interview. Yellow and orange were not in the old key and are still to be explained.</p>' },
+ { t: 'Dates', q: 'Are the email dates fixed?', k: 'dates fixed schedule suggested when calendar easter',
+   a: '<p>The dates in grey on the timeline are suggestions based on week 1 starting Monday 22 March 2027. Check them against the confirmed festival calendar. Good Friday and Easter Monday fall on 26 and 29 March, so the week 2 prep and week 1 feedback emails sit on a Thursday and a Tuesday.</p>' },
+ { t: 'Dates', q: 'Does week 5 get its own feedback email?', k: 'week 5 feedback final thank you separate',
+   a: '<p>In the plan, week 5 hosts get their feedback request in the end-April thank-you, as they did in 2026. Send a separate week 5 email if you prefer.</p>' },
+ { t: 'Each November', q: 'What do I do at the start of a new year?', k: 'restart new year november rollover host-prior tags checklist',
+   a: '<p>There is a yearly restart checklist at the bottom of the <a href="../">Host email year</a> page: new year tags, add host-prior to this year’s hosts, update the registration tagging, make the new segments, import registrants, and replicate last year’s emails.</p>' }
+];
+
+var STOP = {the:1,and:1,for:1,are:1,was:1,with:1,that:1,this:1,what:1,when:1,why:1,how:1,can:1,does:1,not:1,you:1,they:1,them:1,from:1,have:1,has:1,get:1,gets:1,our:1,who:1,which:1,should:1,there:1,their:1,about:1,into:1,but:1,say:1,says:1,did:1,been:1};
+function stem(w) { return w.replace(/(ing|ed|es|s)$/, ''); }
+function tokens(s) {
+  return String(s).toLowerCase().replace(/<[^>]*>/g, ' ').split(/[^a-z0-9]+/).filter(function (w) { return w.length > 2 && !STOP[w]; }).map(stem);
+}
+FAQ.forEach(function (f, i) { f.i = i; f.tq = tokens(f.q); f.tk = tokens(f.k); f.ta = tokens(f.a); });
+
+function search(query) {
+  var qt = tokens(query);
+  if (!qt.length) return [];
+  return FAQ.map(function (f) {
+    var s = 0;
+    qt.forEach(function (w) {
+      if (f.tq.indexOf(w) >= 0) s += 4;
+      if (f.tk.indexOf(w) >= 0) s += 3;
+      if (f.ta.indexOf(w) >= 0) s += 1;
+    });
+    return { f: f, s: s };
+  }).filter(function (r) { return r.s > 0; }).sort(function (a, b) { return b.s - a.s; }).slice(0, 4);
+}
+function card(f, best) {
+  return '<div class="card' + (best ? ' best' : '') + '"><div class="topic">' + f.t + '</div><h3>' + f.q + '</h3><div class="ans">' + f.a + '</div></div>';
+}
+function show(query) {
+  var out = document.getElementById('results');
+  if (!query.trim()) { out.innerHTML = ''; return; }
+  var r = search(query);
+  if (!r.length) {
+    out.innerHTML = '<div class="none"><b>No answer for that yet.</b><div>Try fewer or different words, or look through all the questions below. If it is not there, ask Dan and we will add it.</div><button type="button" id="copyq">Copy my question</button></div>';
+    document.getElementById('copyq').onclick = function () {
+      var b = this;
+      try { navigator.clipboard.writeText(query).then(function () { b.textContent = 'Copied'; }, function () { b.textContent = 'Select and copy it from the box above'; }); }
+      catch (e) { b.textContent = 'Select and copy it from the box above'; }
+    };
+    return;
+  }
+  out.innerHTML = r.map(function (x, i) { return card(x.f, i === 0); }).join('');
+}
+document.getElementById('f').addEventListener('submit', function (e) { e.preventDefault(); show(document.getElementById('q').value); });
+document.getElementById('q').addEventListener('input', function () { show(this.value); });
+document.querySelectorAll('[data-ex]').forEach(function (b) {
+  b.addEventListener('click', function () { var q = document.getElementById('q'); q.value = b.getAttribute('data-ex'); show(q.value); });
+});
+
+var topics = [], html = '';
+FAQ.forEach(function (f) { if (topics.indexOf(f.t) < 0) topics.push(f.t); });
+topics.forEach(function (t) {
+  html += '<div class="topic-title">' + t + '</div>';
+  FAQ.filter(function (f) { return f.t === t; }).forEach(function (f) {
+    html += '<details><summary>' + f.q + '</summary><div class="ans">' + f.a + '</div></details>';
+  });
+});
+document.getElementById('all').innerHTML = html;
+</script>
+</body>
+</html>
