@@ -65,7 +65,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--ink-soft); }
 </head>
 <body>
 <div class="wrap">
-  <nav><a href="../">Host email year</a><a href="./" aria-current="page">Questions</a></nav>
+  <nav><a href="../">Host email year</a><a href="../how-to/">How to</a><a href="./" aria-current="page">Questions</a></nav>
   <h1>Questions about host emails</h1>
   <p class="lede">Type a question in your own words and the best answers show up below. This searches the answers written here. It does not make up new ones.</p>
 
@@ -103,6 +103,10 @@ var FAQ = [
    a: '<p>Ask them to use <b>Update preferences</b> at the bottom of any email and untick <b>Event Host</b>. They drop out of the host segments but stay on the newsletter. Do not ask them to unsubscribe, because that removes them from everything.</p><p>If they simply did not register this year, they only get the registrations-open style emails next year anyway.</p>' },
  { t: 'People and tags', q: 'Someone unsubscribed by mistake. Can we add them back?', k: 'unsubscribed mistake re-add resubscribe back',
    a: '<p>No. Someone who unsubscribes from the regional list has to sign up again themselves, because we cannot re-subscribe them without their consent. Ask them to use the sign-up form again.</p><p>In the host list sheet they stay out of the audiences while their status is Unsubscribed.</p>' },
+ { t: 'Cleaning the list', q: 'An email bounced or someone has left. What do I do?', k: 'bounce bounced undeliverable left organisation no longer works address not found out of office remove',
+   a: '<p>Do it from the sheet. Use <b>Host list &gt; Remove a contact</b>, type the email and choose Yes (bounced or left). They are set to Removed and added to Suppression. If the reply names a replacement, add them as a new row. If they just moved and you have their new address, change the email on the Contacts tab instead. Mailchimp cleans its own bounces. <a href="../how-to/#bounces">Step by step</a>.</p>' },
+ { t: 'Sending', q: 'Which list do I use to email North hosts?', k: 'list audience north only total hosts bcc outlook which audiences tab',
+   a: '<p>Use the <b>Audiences</b> tab in the host list sheet. <b>North only (not on Mailchimp)</b> is the list to email from Kaipātiki. <b>North total</b> is everyone on our list, including people also on Mailchimp. <b>2027 EcoFest North hosts</b> are the registered ones. Click a list name to see a note about it. <a href="../how-to/#get-list">Step by step</a>.</p>' },
  { t: 'Two lists', q: 'How do I take someone off the local list but keep them on the regional list?', k: 'remove local list keep regional no longer local emails asked off suppression kaipatiki stop local',
    a: '<ol><li>On the Contacts tab of the host list sheet, set their <b>Local status</b> to <b>Asked off</b>.</li><li>Add their email to the <b>Suppression</b> tab (reason: Asked off). That keeps them out of every send audience and stops them being added again.</li><li>If they are in the Kaipātiki Mailchimp, unsubscribe or archive them there.</li></ol><p>Do not touch the regional Mailchimp. They stay on the regional list and keep getting regional emails. If they want off the regional list too, they unsubscribe from it themselves.</p>' },
  { t: 'Two lists', q: 'Why did a host get two copies of the same email?', k: 'two copies duplicate double twice both lists hub regional',

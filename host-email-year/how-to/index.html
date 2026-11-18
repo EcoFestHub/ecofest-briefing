@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Host list how to</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: a short list of jobs, each a collapsible block of numbered steps. */
+:root {
+  --bg: #f6f8f7; --surface: #ffffff; --ink: #15241d; --ink-soft: #4b5d54; --line: #d5dfda; --accent: #1e6b50; --chip: #e8efeb; --hit: #fff6d6;
+  --f-head: "Space Grotesk", system-ui, sans-serif; --f-body: "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0f1914; --surface: #17251e; --ink: #e8f0ec; --ink-soft: #a5b8ae; --line: #2b3d34; --accent: #5fc79c; --chip: #213429; --hit: #3a3417; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0f1914; --surface: #17251e; --ink: #e8f0ec; --ink-soft: #a5b8ae; --line: #2b3d34; --accent: #5fc79c; --chip: #213429; --hit: #3a3417; color-scheme: dark; }
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px;
+}
+.wrap { max-width: 820px; margin: 0 auto; }
+nav { display: flex; gap: 16px; font-size: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+nav a { color: var(--accent); text-decoration: none; font-weight: 500; }
+nav a[aria-current] { color: var(--ink); border-bottom: 2px solid var(--accent); }
+h1, h2, h3 { font-family: var(--f-head); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(28px, 5vw, 40px); letter-spacing: -0.02em; }
+h2 { font-size: 13px; margin-top: 36px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+a { color: var(--accent); }
+.lede { color: var(--ink-soft); margin: 10px 0 0; max-width: 62ch; font-size: 16px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin-top: 8px; scroll-margin-top: 16px; }
+details[open] { border-color: var(--accent); }
+summary { padding: 14px 16px; font-weight: 600; cursor: pointer; font-family: var(--f-head); font-size: 17px; }
+summary small { display: block; font-family: var(--f-body); font-weight: 400; font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+.body { padding: 0 18px 16px; }
+ol { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 8px; }
+ol li { padding-left: 4px; }
+.sub { margin: 4px 0 0; padding-left: 18px; font-size: 14px; color: var(--ink-soft); display: grid; gap: 2px; }
+.callout { background: var(--hit); border-radius: 8px; padding: 10px 14px; margin-top: 12px; font-size: 14px; }
+.table-wrap { overflow-x: auto; margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 480px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+tr:last-child td { border-bottom: 0; }
+code { background: var(--chip); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+footer { margin-top: 40px; font-size: 13px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><a href="../">Host email year</a><a href="./" aria-current="page">How to</a><a href="../questions/">Questions</a></nav>
+  <h1>How to use the host list</h1>
+  <p class="lede">The host list sheet does two main jobs: it gives you the right list of people to email, and it passes your corrections on to Mailchimp. Pick the job below and follow the steps.</p>
+
+  <h2>The two main jobs</h2>
+
+  <details id="get-list" open>
+    <summary>Get a list of people to email<small>For example: I need to email the EcoFest North hosts.</small></summary>
+    <div class="body">
+      <ol>
+        <li>Open the <b>EcoFest host contact master list</b> in Google Drive.</li>
+        <li>Update it from Mailchimp. Open the <b>Host list</b> menu and choose <b>Refresh regional export (API)</b>. Wait for the message at the bottom right.
+          <ul class="sub"><li>No access to the API? Paste a Mailchimp export into the <b>Raw export</b> tab (with its header row), then choose <b>Read pasted Mailchimp export</b>.</li></ul></li>
+        <li>Choose <b>Run checks and update</b>. In report-only mode it changes nothing; it only tells you what it found.</li>
+        <li>Choose <b>Build send audiences</b>.</li>
+        <li>Open the <b>Audiences</b> tab. The table on the right (columns F to H) has one row per list, with a count and the emails. Click a list name and a small note explains what it is.</li>
+        <li>Pick your list (see the table below), copy the emails cell, and paste it into the <b>BCC</b> box of a new Outlook email.</li>
+      </ol>
+      <div class="table-wrap"><table>
+        <thead><tr><th>If you want to email&hellip;</th><th>Pick this list</th></tr></thead>
+        <tbody>
+          <tr><td>North contacts who have not registered, and are not on the regional list</td><td><b>North only (not on Mailchimp)</b></td></tr>
+          <tr><td>Every North contact, whether or not they are also on the regional list</td><td><b>North total (Mailchimp plus local)</b></td></tr>
+          <tr><td>North people who have registered to host in 2027</td><td><b>2027 EcoFest North hosts</b></td></tr>
+          <tr><td>North hosts in one festival week</td><td><b>2027 North hosts, week N</b></td></tr>
+          <tr><td>North network amplifiers</td><td><b>Network amplifiers (not on Mailchimp)</b></td></tr>
+        </tbody>
+      </table></div>
+      <div class="callout">People on the Suppression tab never appear in any list. Only people with a status of Active (or Active hub opt-in) appear. Registered hosts are on the regional list, so they get the regional emails and you will rarely email them from here.</div>
+    </div>
+  </details>
+
+  <details id="send-changes">
+    <summary>Pass my changes on to Mailchimp<small>When I correct a name, phone number or email here and the person is also in the regional Mailchimp.</small></summary>
+    <div class="body">
+      <ol>
+        <li>Make the change on the <b>Contacts</b> tab, one cell at a time (email, first name, last name or phone).</li>
+        <li>Open the <b>Updates for Mailchimp</b> tab. A row appears for each person who is on the regional list. People who are not on the regional list do not need passing on.</li>
+        <li>Copy columns <b>A to D</b> (Email, First name, Last name, Phone).</li>
+        <li>In the <b>regional</b> Mailchimp go to Audience, then All contacts, then Add contacts, then Import contacts, then Copy and paste from file. Paste, and match the columns to Email, First name, Last name and Phone.</li>
+        <li>When Mailchimp asks, choose <b>Update existing contacts</b>.</li>
+        <li>If the <b>Old email</b> column has an address, that person changed their email. Mailchimp adds the new address as a new contact, so archive the old one: Audience, All contacts, search the old address, open it and choose Archive.</li>
+        <li>Put <b>Y</b> in the <b>Done</b> column. Later, <b>Host list &gt; Clear finished rows</b> tidies the tab.</li>
+      </ol>
+    </div>
+  </details>
+
+  <h2>Keeping the list clean</h2>
+
+  <details id="bounces">
+    <summary>An email bounced, or someone has left the organisation<small>The "undeliverable", "no longer works here" and "address not found" replies.</small></summary>
+    <div class="body">
+      <p>Do this from the sheet. You rarely need Mailchimp. Mailchimp looks after its own bounces: it marks a bad address as cleaned by itself, and the weekly refresh notices.</p>
+      <ol>
+        <li>Read the reply. If it is temporary (an out-of-office message, a full mailbox), do nothing.</li>
+        <li>If they have left and the reply names a replacement, add the replacement as a new row on the <b>Contacts</b> tab (email, name, organisation, Contact type Potential host, Local status Active).</li>
+        <li>If they have just moved and you have their new address, change the email on the Contacts tab instead of removing them. It will then be passed on to Mailchimp (see the job above).</li>
+        <li>If the address is dead, choose <b>Host list &gt; Remove a contact</b>, type the email, and choose <b>Yes</b> (bounced or left). The sheet sets them to Removed and adds them to the <b>Suppression</b> tab, so they are never emailed or added back.</li>
+      </ol>
+      <div class="callout">If it is a bounce from a Mailchimp send, you do not need to do anything. Only add a replacement contact if the reply names one.</div>
+    </div>
+  </details>
+
+  <details id="local-off">
+    <summary>Take someone off the local list but keep them on the regional list</summary>
+    <div class="body">
+      <ol>
+        <li>Choose <b>Host list &gt; Remove a contact</b>, type their email, and choose <b>No</b> (they asked to come off).</li>
+        <li>That sets their Local status to <b>Asked off</b> and adds them to <b>Suppression</b>.</li>
+        <li>If they are in the Kaip&#257;tiki Mailchimp, unsubscribe or archive them there.</li>
+      </ol>
+      <div class="callout">Do not touch the regional Mailchimp. They stay on it. If they also want off the regional list, they unsubscribe from it themselves.</div>
+    </div>
+  </details>
+
+  <details id="hub-opt-ins">
+    <summary>Add the hub opt-ins to the Kaip&#257;tiki list<small>People who ticked Kaip&#257;tiki on the regional sign-up.</small></summary>
+    <div class="body">
+      <ol>
+        <li>Open the <b>Hub opt-ins to add</b> tab. Each run fills it with people who chose Kaip&#257;tiki and are not on our list yet.</li>
+        <li>Copy them into the Kaip&#257;tiki Mailchimp. If someone is already there with newer details, choose <b>add new only</b> so you do not overwrite them.</li>
+        <li>In the sheet choose <b>Host list &gt; Mark hub opt-ins as added</b>. This puts them in Contacts as Active (hub opt-in) and clears the tab.</li>
+      </ol>
+      <div class="callout">Do not clear the tab by hand. The same people would appear again next time.</div>
+    </div>
+  </details>
+
+  <details id="add-contact">
+    <summary>Add a new contact by hand</summary>
+    <div class="body">
+      <ol>
+        <li>On the <b>Contacts</b> tab, go to the next empty row.</li>
+        <li>Fill in Email, First name, Last name, Organisation and Phone.</li>
+        <li>Set <b>Contact type</b> to Potential host (or Network amplifier), and <b>Local status</b> to Active.</li>
+        <li>Check the email is not already on the sheet: search for it first (Ctrl+F).</li>
+      </ol>
+    </div>
+  </details>
+
+  <h2>Checks</h2>
+
+  <details id="check-tags">
+    <summary>Check that recent registrants have the host-2027 tag<small>Before a reminder email goes out.</small></summary>
+    <div class="body">
+      <ol>
+        <li>Get the email addresses of the three most recent registrations from the website registration list. (Ask Dan where to find that list.)</li>
+        <li>In Mailchimp open <b>Audience</b>, then <b>All contacts</b>, and search for the first address.</li>
+        <li>Open the contact and look under <b>Tags</b>. You should see <b>host-2027</b> and a week tag such as <b>week-2027-3</b>.</li>
+        <li>Repeat for the other two.</li>
+        <li>Also open <b>Audience</b>, then <b>Segments</b>, then <b>Hosts 2027 (all)</b>. Compare its count with the number of hosts registered on the website. They should match or be very close.</li>
+        <li>If a tag is missing, open the contact, choose <b>Add tag</b>, and add it by hand. Then tell Dan, because the tagging at registration may have failed.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details id="check-segment">
+    <summary>Check a Mailchimp segment has the right people</summary>
+    <div class="body">
+      <ol>
+        <li>In Mailchimp open <b>Audience</b>, then <b>Segments</b>.</li>
+        <li>Click the segment. The count and a sample of contacts show.</li>
+        <li>Does the count look sensible? Open a couple of contacts from the sample and check their tags match the segment's rule.</li>
+      </ol>
+    </div>
+  </details>
+
+  <details id="monday">
+    <summary>Every Monday: the weekly check<small>When the summary email arrives.</small></summary>
+    <div class="body">
+      <ol>
+        <li>Open the weekly summary email and the host list sheet.</li>
+        <li>If the <b>Hub opt-ins to add</b> tab has people, add them (see above).</li>
+        <li>If the <b>Updates for Mailchimp</b> tab has rows without a Y, pass them on (see above).</li>
+        <li>Look through any <b>To check</b> rows on the Contacts tab and give each a status.</li>
+        <li>If the email says there is a problem, tell Dan.</li>
+      </ol>
+    </div>
+  </details>
+
+  <footer>Not here? Ask Dan, and it will be added. The <a href="../questions/">Questions</a> page answers short questions in plain words.</footer>
+</div>
+<script>
+// Open the block named in the address (for example #bounces) so links from other pages land on it.
+function openHash() {
+  var id = location.hash.slice(1);
+  var el = id && document.getElementById(id);
+  if (el && el.tagName === 'DETAILS') { el.open = true; el.scrollIntoView(); }
+}
+openHash();
+window.addEventListener('hashchange', openHash);
+</script>
+</body>
+</html>

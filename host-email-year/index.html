@@ -5,89 +5,83 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <title>Host email year</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
 <style>
-/* Layout: one vertical spine of dated emails, each a card with its own tick-list; yearly restart list underneath. */
+/* Layout: one vertical spine of emails. Each has a bold "ready by" date, an arrow, and the send date in colour. */
 :root {
-  --bg: #f6f8f7;
-  --surface: #ffffff;
-  --ink: #15241d;
-  --ink-soft: #4b5d54;
-  --line: #d5dfda;
-  --accent: #1e6b50;
-  --rego: #0f6f78;
-  --weeks: #3d7a1f;
-  --wrap: #8a3b63;
-  --done: #5d6f66;
-  --chip: #e8efeb;
-  --f-head: "Space Grotesk", system-ui, sans-serif;
-  --f-body: "Inter", system-ui, sans-serif;
+  --bg: #f6f8f7; --surface: #ffffff; --ink: #15241d; --ink-soft: #4b5d54; --line: #d5dfda; --accent: #1e6b50;
+  --setup: #1e6b50; --rego: #0f6f78; --weeks: #3d7a1f; --wrap: #8a3b63; --done: #5d6f66; --chip: #e8efeb; --hit: #fff6d6;
+  --f-head: "Space Grotesk", system-ui, sans-serif; --f-body: "Inter", system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0f1914; --surface: #17251e; --ink: #e8f0ec; --ink-soft: #a5b8ae; --line: #2b3d34;
-    --accent: #5fc79c; --rego: #52c4cf; --weeks: #8fd05f; --wrap: #e08ab8; --done: #8fa398; --chip: #213429;
-    color-scheme: dark;
+    --bg: #0f1914; --surface: #17251e; --ink: #e8f0ec; --ink-soft: #a5b8ae; --line: #2b3d34; --accent: #5fc79c;
+    --setup: #5fc79c; --rego: #52c4cf; --weeks: #8fd05f; --wrap: #e08ab8; --done: #8fa398; --chip: #213429; --hit: #3a3417; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0f1914; --surface: #17251e; --ink: #e8f0ec; --ink-soft: #a5b8ae; --line: #2b3d34;
-  --accent: #5fc79c; --rego: #52c4cf; --weeks: #8fd05f; --wrap: #e08ab8; --done: #8fa398; --chip: #213429;
-  color-scheme: dark;
+  --bg: #0f1914; --surface: #17251e; --ink: #e8f0ec; --ink-soft: #a5b8ae; --line: #2b3d34; --accent: #5fc79c;
+  --setup: #5fc79c; --rego: #52c4cf; --weeks: #8fd05f; --wrap: #e08ab8; --done: #8fa398; --chip: #213429; --hit: #3a3417; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { margin: 0; }
-img { max-width: 100%; }
 body {
-  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 28px 64px;
 }
-.wrap { max-width: 880px; margin: 0 auto; }
+.wrap { max-width: 900px; margin: 0 auto; }
+nav { display: flex; gap: 16px; font-size: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+nav a { color: var(--accent); text-decoration: none; font-weight: 500; }
+nav a[aria-current] { color: var(--ink); border-bottom: 2px solid var(--accent); }
 h1, h2, h3 { font-family: var(--f-head); text-wrap: balance; line-height: 1.15; margin: 0; }
 h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.02em; }
 h2 { font-size: 22px; font-weight: 700; margin-top: 56px; }
 h3 { font-size: 18px; font-weight: 700; }
 p { margin: 0; }
+a { color: var(--accent); }
 .lede { color: var(--ink-soft); max-width: 62ch; margin-top: 12px; font-size: 16px; }
 .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 24px; }
 .rule { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
 .rule b { display: block; font-family: var(--f-head); font-size: 15px; margin-bottom: 4px; }
 .rule span { color: var(--ink-soft); font-size: 14px; }
-.progress { display: flex; align-items: center; gap: 12px; margin-top: 28px; font-size: 14px; color: var(--ink-soft); flex-wrap: wrap; }
+.hubnote { margin-top: 20px; background: var(--hit); border-radius: 10px; padding: 14px 16px; font-size: 14px; }
+.progress { display: flex; align-items: center; gap: 12px; margin-top: 24px; font-size: 14px; color: var(--ink-soft); flex-wrap: wrap; }
 .bar { flex: 1 1 160px; height: 6px; background: var(--chip); border-radius: 3px; overflow: hidden; min-width: 120px; }
 .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s; }
-.key { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 20px; font-size: 13px; color: var(--ink-soft); }
+.key { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; font-size: 13px; color: var(--ink-soft); }
 .key span { display: inline-flex; align-items: center; gap: 6px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 
-.timeline { position: relative; margin-top: 20px; padding-left: 0; }
-.item { display: grid; grid-template-columns: 132px 1fr; gap: 0 20px; position: relative; padding-bottom: 20px; }
-.when { text-align: right; padding-top: 18px; font-family: var(--f-head); }
-.when b { display: block; font-size: 17px; }
-.when small { display: block; font-size: 12px; color: var(--ink-soft); font-family: var(--f-body); line-height: 1.35; }
-.spine { position: absolute; left: 152px; top: 0; bottom: 0; width: 2px; background: var(--line); }
+.timeline { position: relative; margin-top: 20px; }
+.item { display: grid; grid-template-columns: 156px 1fr; gap: 0 20px; position: relative; padding-bottom: 20px; }
+.when { text-align: right; padding-top: 14px; font-family: var(--f-head); }
+.when .lbl { display: block; font-family: var(--f-body); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.when b { display: block; font-size: 18px; line-height: 1.2; }
+.when .send { display: block; margin-top: 4px; font-family: var(--f-body); font-size: 13px; font-weight: 600; color: var(--c); }
+.when .send:before { content: "\2193  "; }
+.when small { display: block; font-size: 12px; color: var(--ink-soft); font-family: var(--f-body); line-height: 1.35; margin-top: 4px; }
+.spine { position: absolute; left: 176px; top: 0; bottom: 0; width: 2px; background: var(--line); }
 .item:first-child .spine { top: 26px; }
 .item:last-child .spine { bottom: calc(100% - 26px); }
-.node { position: absolute; left: 146px; top: 22px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--bg); background: var(--c); z-index: 1; }
+.node { position: absolute; left: 170px; top: 22px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--bg); background: var(--c); z-index: 1; }
 .card { margin-left: 34px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; min-width: 0; grid-column: 2; }
-.item.rego { --c: var(--rego); } .item.weeks { --c: var(--weeks); } .item.wrapup { --c: var(--wrap); }
+.item.setup { --c: var(--setup); } .item.rego { --c: var(--rego); } .item.weeks { --c: var(--weeks); } .item.wrapup { --c: var(--wrap); }
+.item.setup .card { border-color: var(--setup); border-width: 2px; }
 .card .tag { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
 .card h3 { margin-top: 2px; }
 .to { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; color: var(--ink-soft); }
 .seg { display: inline-flex; align-items: center; gap: 8px; background: var(--chip); border-radius: 6px; padding: 3px 4px 3px 10px; color: var(--ink); font-weight: 500; max-width: 100%; }
-.seg button { font: inherit; font-size: 12px; border: 0; background: var(--surface); color: var(--accent); border-radius: 4px; padding: 2px 8px; cursor: pointer; border: 1px solid var(--line); }
+.seg button { font: inherit; font-size: 12px; background: var(--surface); color: var(--accent); border-radius: 4px; padding: 2px 8px; cursor: pointer; border: 1px solid var(--line); }
 .note { margin-top: 10px; font-size: 14px; color: var(--ink-soft); }
 .steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 4px; }
 .steps label { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 6px 4px; border-radius: 6px; cursor: pointer; align-items: start; }
 .steps label:hover { background: var(--chip); }
 .steps input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); }
 .steps input:checked + span { color: var(--ink-soft); text-decoration: line-through; text-decoration-color: var(--line); }
+.steps .how { display: block; margin-top: 4px; font-size: 13px; color: var(--ink-soft); }
 .item.past .card { background: transparent; border-style: dashed; }
 .item.past .node { background: var(--done); }
 .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--chip); color: var(--ink-soft); margin-left: 8px; vertical-align: middle; }
-
 .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 16px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; min-width: 0; }
 .panel h3 { margin-bottom: 8px; }
@@ -98,38 +92,38 @@ table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 520p
 th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { font-family: var(--f-head); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
 tr:last-child td { border-bottom: 0; }
-td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .quote { margin-top: 12px; border-left: 3px solid var(--wrap); padding: 4px 0 4px 14px; font-size: 14px; color: var(--ink-soft); max-width: 62ch; }
-button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 footer { margin-top: 48px; font-size: 13px; color: var(--ink-soft); }
 .reset { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--ink-soft); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
-
 @media (max-width: 640px) {
   .item { grid-template-columns: 1fr; }
-  .when { text-align: left; padding: 0 0 6px 34px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-  .when b { display: inline; font-size: 16px; } .when small { display: inline; }
+  .when { text-align: left; padding: 0 0 6px 34px; }
+  .when .lbl { display: inline; margin-right: 6px; } .when b { display: inline; font-size: 16px; }
+  .when .send { display: inline; margin-left: 10px; } .when small { display: block; }
   .spine { left: 6px; } .node { left: 0; top: 4px; }
   .card { margin-left: 34px; grid-column: 1; }
   .item:last-child .spine { bottom: calc(100% - 12px); } .item:first-child .spine { top: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
 </style>
-
 </head>
 <body>
 <div class="wrap">
-  <p style="margin:0 0 20px;font-size:14px;display:flex;gap:16px"><a href="./" aria-current="page" style="color:var(--ink);font-weight:500;text-decoration:none;border-bottom:2px solid var(--accent)">Host email year</a><a href="questions/" style="color:var(--accent);font-weight:500;text-decoration:none">Questions</a></p>
+  <nav><a href="./" aria-current="page">Host email year</a><a href="how-to/">How to</a><a href="questions/">Questions</a></nav>
   <h1>Host email year</h1>
-  <p class="lede">What to send hosts and when, in order, from registrations opening in October to the thank-you in May. Each email is the same four moves: replicate last year's, edit it, point it at a saved segment, schedule it.</p>
+  <p class="lede">What to send hosts and when, in order. Every email is prepared a week before it goes out: tested with the hubs, then scheduled. So each date below has two parts, the day it must be <b>ready</b> and the day it <b>sends</b>.</p>
 
   <div class="rules">
     <div class="rule"><b>Tags record facts</b><span>A tag says what is true about a person (registered in 2027, event in week 3). It is added once.</span></div>
     <div class="rule"><b>Segments are what you send to</b><span>Every email goes to a saved segment, never to a tag. The segment updates itself.</span></div>
     <div class="rule"><b>Opt out through preferences</b><span>Hosts who want fewer emails use Update preferences, not Unsubscribe, so they stay on the list.</span></div>
   </div>
+  <div class="hubnote"><b>Hub test contacts.</b> Each prepared email goes first, as a test, to one contact from each hub. They give feedback during the week, and they see what is going out on the regional list so they can change or hold what they send to their own local lists. The names of these contacts are kept by Dan; ask him for the current list.</div>
 
   <div class="progress" aria-live="polite"><span id="count">0 of 0 steps ticked</span><span class="bar"><i id="barfill"></i></span><button class="reset" id="reset" type="button">Clear ticks</button></div>
   <div class="key">
+    <span><i class="dot" style="background:var(--setup)"></i>Set up</span>
     <span><i class="dot" style="background:var(--rego)"></i>Registration</span>
     <span><i class="dot" style="background:var(--weeks)"></i>Festival weeks</span>
     <span><i class="dot" style="background:var(--wrap)"></i>After the festival</span>
@@ -137,7 +131,7 @@ footer { margin-top: 48px; font-size: 13px; color: var(--ink-soft); }
   </div>
 
   <h2>The 2027 emails, in order</h2>
-  <p class="note">Dates in grey are suggestions. Check them against the confirmed festival calendar (week 1 starts Monday 22 March 2027). Ticks stay in this browser only.</p>
+  <p class="note">Send dates are suggestions. Check them against the confirmed festival calendar (week 1 starts Monday 22 March 2027). Ready dates are always seven days before sending. Ticks stay in this browser only.</p>
   <div class="timeline" id="timeline"></div>
 
   <h2>Between the emails</h2>
@@ -146,7 +140,7 @@ footer { margin-top: 48px; font-size: 13px; color: var(--ink-soft); }
       <ul><li><b>Hub opt-ins to add</b>: paste the people into the KP Mailchimp, then use Host list &gt; Mark hub opt-ins as added.</li>
       <li><b>Updates for Mailchimp</b>: paste columns A to D into the regional import, choose Update existing contacts, then put Y in Done.</li>
       <li><b>To check</b> rows on Contacts: decide a status for each.</li></ul></div>
-    <div class="panel"><h3>When a host is missing from a segment</h3><p>Open the person in Mailchimp and look at their tags. A registered host needs <b>host-2027</b> and a <b>week-2027-N</b> tag. If the tag is missing, add it by hand and tell Dan, because the registration tagging may have failed.</p></div>
+    <div class="panel"><h3>When a host is missing from a segment</h3><p>Open the person in Mailchimp and look at their tags. A registered host needs <b>host-2027</b> and a <b>week-2027-N</b> tag. If a tag is missing, add it by hand and tell Dan, because the tagging at registration may have failed. <a href="how-to/#check-tags">Step by step</a>.</p></div>
   </div>
 
   <h2>The saved segments</h2>
@@ -160,10 +154,10 @@ footer { margin-top: 48px; font-size: 13px; color: var(--ink-soft); }
   <div class="quote">You are on this list because you hosted this year or recently, or showed interest. If you would rather not be reminded next year, tell us. If you do not register next year you will only get the registrations-open style emails, not the weekly host emails. To change what you receive, use Update preferences at the bottom of this email, not Unsubscribe.</div>
 
   <h2>Yearly restart checklist</h2>
-  <p class="note">Do this each November, before the new registrations-open email. Replace 2027 with the new year.</p>
+  <p class="note">Do this each year before the registrations-open email (that is, before 5 November). Replace 2027 with the new year.</p>
   <div class="panel" style="margin-top:12px"><ul class="steps" id="restart"></ul></div>
 
-  <footer>Made from the host comms plan, 12 November 2026. Segment names are exactly as they appear in the regional Mailchimp audience.</footer>
+  <footer>Made from the host comms plan. Segment names are exactly as they appear in the regional Mailchimp audience.</footer>
 </div>
 
 <script>
@@ -173,44 +167,61 @@ var SEG = {
   wrap: 'Wrap up audience 2027',
   wk: function (n) { return 'Week ' + n + ' hosts 2027'; }
 };
-function std(segName, extra) {
+var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], DAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function d(iso) { var p = iso.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); }
+function fmt(dt) { return DAY[dt.getUTCDay()] + ' ' + dt.getUTCDate() + ' ' + MON[dt.getUTCMonth()]; }
+function minus7(iso) { var x = d(iso); x.setUTCDate(x.getUTCDate() - 7); return x; }
+function nameDate(iso) { return iso; }
+
+function steps(segName, extra) {
   var s = [
-    'In Mailchimp open Campaigns and find last year’s version of this email (folder 2026). Choose Replicate.',
-    'Move the copy into the folder 2027 hosts (make it once, first time only).',
-    'Edit the dates, the year and the links. Send a test to yourself and read it on your phone.',
-    'Under To, pick Audience, then Segment, then <b>' + segName + '</b>. Do not pick a tag.',
-    'Schedule it for the date above. Check the recipient count looks sensible first.'
+    'Open the replicated draft in the folder 2027 hosts and update the text, the year and the links.',
+    'Check the segment <b>' + segName + '</b> has the right number of people.',
+    'By the ready date, send a test to one contact from each hub. Ask for feedback during the week.',
+    'Make any changes the hubs asked for.',
+    'Schedule it for the send date. Tell the hubs it is scheduled so they can adjust their own local sends.'
   ];
-  return extra ? s.concat(extra) : s;
+  return extra ? extra.concat(s) : s;
 }
+var CHECKTAGS = 'Check that people who registered recently have the host-2027 tag. <span class="how">How: in Mailchimp open Audience, then All contacts, search the email of each of the three most recent registrations, and look under Tags for <b>host-2027</b> and a week tag. Also open Segments, then <b>Hosts 2027 (all)</b>, and compare its count with the number of hosts registered on the website (ask Dan where to find that list). If one is missing, add the tag by hand and tell Dan. <a href="how-to/#check-tags">More detail</a>.</span>';
+
 var EMAILS = [
-  { id: 'open', phase: 'rego', when: '5 Nov 2026', sub: 'Sent', name: 'Registrations open', past: true, to: null,
+  { id: 'setup', phase: 'setup', first: true, ready: 'Before Tue 5 Jan', send: 'First task', sub: 'Before anything else. In future years, before 5 Nov.',
+    name: 'Set up the 2027 emails in one go', to: null,
+    note: 'Do this once, all together, so each email below only needs editing and scheduling.',
+    steps: [
+      'In Mailchimp, open Campaigns and create a folder called <b>2027 hosts</b>.',
+      'Open last year’s host emails (folder 2026). Replicate every one and move each copy into <b>2027 hosts</b>. That covers registrations open, the reminders, programme launch, the week prep and feedback emails, the final thank-you and the report.',
+      'Rename each copy with its send date first, for example <b>2027-01-12 Reminder: registrations open</b>, so they sit in date order. The send dates are on this page.',
+      'Leave last year’s emails alone. If one will not be sent again, do not replicate it.'
+    ] },
+  { id: 'open', phase: 'rego', past: true, ready: 'Sent', send: '5 Nov 2026', name: 'Registrations open', to: null,
     note: 'Already sent to 514 people. 35% opened it.' },
-  { id: 'jan', phase: 'rego', when: 'Tue 12 Jan', sub: 'Mid-January, suggested', name: 'Reminder: registrations are still open', to: SEG.rem,
+  { id: 'jan', phase: 'rego', send: '2027-01-12', sub: 'Mid-January', name: 'Reminder: registrations are still open', to: SEG.rem,
     note: 'Anyone who has registered since October drops out of this segment by themselves, because they now have the host-2027 tag.',
-    steps: std(SEG.rem, ['Before sending, check that people who registered recently really have host-2027. If a recent registrant is missing it, tell Dan.']) },
-  { id: 'feb', phase: 'rego', when: 'Tue 16 Feb', sub: 'Mid-February, suggested', name: 'Registrations close soon and the programme launches', to: SEG.rem,
-    note: 'Same segment as January. This is the last general nudge.',
-    steps: std(SEG.rem, ['After it goes, add the tag stop-rego-nudges to anyone you do not want to chase again.']) }
+    steps: steps(SEG.rem, [CHECKTAGS]) },
+  { id: 'feb', phase: 'rego', send: '2027-02-16', sub: 'Mid-February', name: 'Registrations close soon and the programme launches', to: SEG.rem,
+    note: 'Same segment as January. This is the last general nudge. After it goes, add the tag stop-rego-nudges to anyone you do not want to chase again.',
+    steps: steps(SEG.rem) }
 ];
 var WEEKSTART = ['Mon 22 Mar', 'Mon 29 Mar', 'Mon 5 Apr', 'Mon 12 Apr', 'Mon 19 Apr'];
-var PREP = ['Thu 18 Mar', 'Thu 25 Mar', 'Thu 1 Apr', 'Thu 8 Apr', 'Thu 15 Apr'];
-var FEED = ['Tue 30 Mar', 'Tue 6 Apr', 'Tue 13 Apr', 'Tue 20 Apr'];
+var PREP = ['2027-03-18', '2027-03-25', '2027-04-01', '2027-04-08', '2027-04-15'];
+var FEED = ['2027-03-30', '2027-04-06', '2027-04-13', '2027-04-20'];
 for (var w = 1; w <= 5; w++) {
-  EMAILS.push({ id: 'prep' + w, phase: 'weeks', when: PREP[w - 1], sub: 'Week ' + w + ' starts ' + WEEKSTART[w - 1], name: 'Week ' + w + ': event prep',
-    to: SEG.wk(w), note: 'Your event is this week: what to bring, who to call, how to report numbers. Send two or three days before the week starts.',
-    steps: std(SEG.wk(w), ['Check the segment has everyone with an event that week. Registrations can still arrive, so look again the day before.']) });
+  EMAILS.push({ id: 'prep' + w, phase: 'weeks', send: PREP[w - 1], sub: 'Week ' + w + ' starts ' + WEEKSTART[w - 1], name: 'Week ' + w + ': event prep',
+    to: SEG.wk(w), note: 'Your event is this week: what to bring, who to call, how to report numbers.',
+    steps: steps(SEG.wk(w)) });
   if (w < 5) {
-    EMAILS.push({ id: 'feed' + w, phase: 'weeks', when: FEED[w - 1], sub: 'Just after week ' + w + ' ends (Easter Monday is 29 Mar)', name: 'Week ' + w + ': feedback and wrap-up of your event',
-      to: SEG.wk(w), note: 'Thank them, ask how it went, link the feedback form.', steps: std(SEG.wk(w)) });
+    EMAILS.push({ id: 'feed' + w, phase: 'weeks', send: FEED[w - 1], sub: 'Just after week ' + w + ' ends', name: 'Week ' + w + ': feedback and wrap-up of your event',
+      to: SEG.wk(w), note: 'Thank them, ask how it went, link the feedback form.', steps: steps(SEG.wk(w)) });
   }
 }
-EMAILS.push({ id: 'thanks', phase: 'wrapup', when: 'Tue 27 Apr', sub: 'End of April, suggested', name: 'Final thank-you and last feedback reminder', to: SEG.all,
+EMAILS.push({ id: 'thanks', phase: 'wrapup', send: '2027-04-27', sub: 'End of April', name: 'Final thank-you and last feedback reminder', to: SEG.all,
   note: 'Goes to everyone who is a host this year. Week 5 hosts get their feedback request in this email (as in 2026). Send a separate week 5 feedback email if you prefer.',
-  steps: std(SEG.all) });
-EMAILS.push({ id: 'report', phase: 'wrapup', when: 'Late May to early June', sub: 'When the report is ready', name: 'Report, celebration and see you next year', to: SEG.wrap,
+  steps: steps(SEG.all) });
+EMAILS.push({ id: 'report', phase: 'wrapup', send: '2027-06-01', sub: 'Late May or early June, when the report is ready', name: 'Report, celebration and see you next year', to: SEG.wrap,
   note: 'The widest email: this year’s hosts, past hosts and people who showed interest. It carries the opt-out wording at the bottom of this page.',
-  steps: std(SEG.wrap, ['Paste in the opt-out wording from this page, and keep the Update preferences link in the footer.']) });
+  steps: steps(SEG.wrap, []).concat(['Paste in the opt-out wording from this page, and keep the Update preferences link in the footer.']) });
 
 var SEGS = [
   ['Hosts 2027 (all)', 'Everyone with the tag host-2027', 'End-of-April thank-you'],
@@ -220,37 +231,43 @@ var SEGS = [
   ['Wrap up audience 2027', 'host-2027, the past-host tags, or interested-host', 'The May report email']
 ];
 var RESTART = [
+  'Replicate last year’s emails into a new folder for the year and put the send dates in their names (before 5 November).',
   'Create the new year tags: host-2028 and week-2028-1 to week-2028-5.',
   'Add host-prior to everyone who has this year’s host tag, so they count as past hosts next year.',
   'Update the registration tagging (Zapier or whatever replaces it) so new registrants get the new year tag.',
   'Make the new saved segments for the year. Copy the old ones and swap the year tag in each.',
   'Import the first registrants and set Registered and Week(s) in the host list sheet.',
   'Add the new year to the host list sheet Settings tab (festival_year).',
-  'Review stop-rego-nudges and the To check rows on the sheet.',
-  'Replicate last year’s emails into a new year folder and work down this page again.'
+  'Review stop-rego-nudges and the To check rows on the sheet.'
 ];
 
-var KEY = 'ef-host-year-v1', saved = {};
+var KEY = 'ef-host-year-v2', saved = {};
 try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { saved = {}; }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* ignore */ } }
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
-function stepList(id, steps) {
-  return '<ul class="steps">' + steps.map(function (t, i) {
+function stepList(id, list) {
+  return '<ul class="steps">' + list.map(function (t, i) {
     var k = id + ':' + i;
     return '<li><label><input type="checkbox" data-k="' + k + '"' + (saved[k] ? ' checked' : '') + '><span>' + t + '</span></label></li>';
   }).join('') + '</ul>';
 }
 
-var tl = document.getElementById('timeline');
-tl.innerHTML = EMAILS.map(function (e) {
-  var label = { rego: 'Registration', weeks: 'Festival weeks', wrapup: 'After the festival' }[e.phase];
+var LABEL = { setup: 'Set up', rego: 'Registration', weeks: 'Festival weeks', wrapup: 'After the festival' };
+document.getElementById('timeline').innerHTML = EMAILS.map(function (e) {
+  var when;
+  if (e.first) when = '<span class="lbl">Task</span><b>' + e.ready + '</b><small>' + e.sub + '</small>';
+  else if (e.past) when = '<span class="lbl">Sent</span><b>' + e.send + '</b>';
+  else {
+    when = '<span class="lbl">Ready by</span><b>' + fmt(minus7(e.send)) + '</b><span class="send">sends ' + fmt(d(e.send)) + '</span><small>' + e.sub + '</small>';
+  }
+  var title = e.name;
   var to = e.to ? '<div class="to">Send to <span class="seg">' + esc(e.to) + ' <button type="button" data-copy="' + esc(e.to) + '">Copy name</button></span></div>' : '';
+  var rename = (!e.first && !e.past) ? '<div class="note">Draft name: <b>' + e.send + ' ' + esc(e.name.replace(/^Week (\d): /, 'Week $1 ')) + '</b></div>' : '';
   return '<div class="item ' + e.phase + (e.past ? ' past' : '') + '">' +
-    '<div class="when"><b>' + e.when + '</b><small>' + e.sub + '</small></div>' +
-    '<span class="spine"></span><span class="node"></span>' +
-    '<div class="card"><div class="tag">' + label + (e.past ? '<span class="badge">Done</span>' : '') + '</div><h3>' + e.name + '</h3>' + to +
-    '<p class="note">' + e.note + '</p>' + (e.steps ? stepList(e.id, e.steps) : '') + '</div></div>';
+    '<div class="when">' + when + '</div><span class="spine"></span><span class="node"></span>' +
+    '<div class="card"><div class="tag">' + LABEL[e.phase] + (e.past ? '<span class="badge">Done</span>' : '') + '</div><h3>' + title + '</h3>' + to +
+    '<p class="note">' + e.note + '</p>' + rename + (e.steps ? stepList(e.id, e.steps) : '') + '</div></div>';
 }).join('');
 
 document.getElementById('segtable').innerHTML = SEGS.map(function (r) {
@@ -277,8 +294,8 @@ document.addEventListener('click', function (ev) {
   var text = b.getAttribute('data-copy'), old = b.textContent;
   function done() { b.textContent = 'Copied'; setTimeout(function () { b.textContent = old; }, 1500); }
   function fallback() {
-    var sel = window.getSelection(), r = document.createRange(), span = b.parentNode;
-    r.selectNodeContents(span.firstChild); sel.removeAllRanges(); sel.addRange(r); b.textContent = 'Selected';
+    var sel = window.getSelection(), r = document.createRange();
+    r.selectNodeContents(b.parentNode.firstChild); sel.removeAllRanges(); sel.addRange(r); b.textContent = 'Selected';
     setTimeout(function () { b.textContent = old; }, 1500);
   }
   try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
