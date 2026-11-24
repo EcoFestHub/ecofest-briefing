@@ -119,7 +119,9 @@ footer { margin-top: 48px; font-size: 13px; color: var(--ink-soft); }
     <div class="rule"><b>Segments are what you send to</b><span>Every email goes to a saved segment, never to a tag. The segment updates itself.</span></div>
     <div class="rule"><b>Opt out through preferences</b><span>Hosts who want fewer emails use Update preferences, not Unsubscribe, so they stay on the list.</span></div>
   </div>
-  <div class="hubnote"><b>Hub test contacts.</b> Each prepared email goes first, as a test, to one contact from each hub. They give feedback during the week, and they see what is going out on the regional list so they can change or hold what they send to their own local lists. The names of these contacts are kept by Dan; ask him for the current list.</div>
+  <div class="hubnote"><b>Hub test contacts.</b> Each prepared email goes first, as a test, to one contact from each hub. They give feedback during the week, and they see what is going out on the regional list so they can change or hold what they send to their own local lists. Likely contacts are Louise, Laura and Anna, but check with each team who it should go to before the first test.</div>
+
+  <div class="hubnote"><b>Tags: being fixed, check before the first send.</b> The website tags new hosts <b>Host 2027</b>, but the saved segments below look for <b>host-2027</b>. Until Dan confirms the segments match, a registered host could still get a reminder. The website also adds no week tag yet, so the week segments stay empty until that is sorted.</div>
 
   <div class="progress" aria-live="polite"><span id="count">0 of 0 steps ticked</span><span class="bar"><i id="barfill"></i></span><button class="reset" id="reset" type="button">Clear ticks</button></div>
   <div class="key">
@@ -136,11 +138,11 @@ footer { margin-top: 48px; font-size: 13px; color: var(--ink-soft); }
 
   <h2>Between the emails</h2>
   <div class="cols">
-    <div class="panel"><h3>Every Monday</h3><p>The host list sheet emails you a summary. Open it and look at three things:</p>
-      <ul><li><b>Hub opt-ins to add</b>: paste the people into the KP Mailchimp, then use Host list &gt; Mark hub opt-ins as added.</li>
-      <li><b>Updates for Mailchimp</b>: paste columns A to D into the regional import, choose Update existing contacts, then put Y in Done.</li>
-      <li><b>To check</b> rows on Contacts: decide a status for each.</li></ul></div>
-    <div class="panel"><h3>When a host is missing from a segment</h3><p>Open the person in Mailchimp and look at their tags. A registered host needs <b>host-2027</b> and a <b>week-2027-N</b> tag. If a tag is missing, add it by hand and tell Dan, because the tagging at registration may have failed. <a href="how-to/#check-tags">Step by step</a>.</p></div>
+    <div class="panel"><h3>Every Monday: Natahma</h3><p>The host list sheet emails a short summary with counts. Then:</p>
+      <ul><li><b>Corrections for Mailchimp.</b> Only if the summary says some are waiting. <a href="how-to/#send-changes">Steps</a>.</li>
+      <li><b>To check.</b> Give a status to any contact marked To check. <a href="how-to/#to-check">Steps</a>.</li></ul></div>
+    <div class="panel"><h3>When there are new hub opt-ins: Dan</h3><p>The sheet emails Dan the new people who chose Kaip&#257;tiki. Only Dan can sign in to the Kaip&#257;tiki Mailchimp, so this part is his. <a href="how-to/#hub-opt-ins">Steps</a>.</p></div>
+    <div class="panel"><h3>When a host is missing from a segment</h3><p>Open the person in Mailchimp and look at their tags. A registered host should have the tag <b>Host 2027</b>. Week tags are not added automatically yet. If the host tag is missing, add it by hand and tell Dan. <a href="how-to/#check-tags">Steps</a>.</p></div>
   </div>
 
   <h2>The saved segments</h2>
@@ -160,6 +162,7 @@ footer { margin-top: 48px; font-size: 13px; color: var(--ink-soft); }
   <footer>Made from the host comms plan. Segment names are exactly as they appear in the regional Mailchimp audience.</footer>
 </div>
 
+<script src="ui.js"></script>
 <script>
 var SEG = {
   rem: 'Registration reminder audience 2027',
@@ -176,15 +179,14 @@ function nameDate(iso) { return iso; }
 function steps(segName, extra) {
   var s = [
     'Open the replicated draft in the folder 2027 hosts and update the text, the year and the links.',
-    'Check the segment <b>' + segName + '</b> has the right number of people.',
-    'By the ready date, send a test to one contact from each hub. Ask for feedback during the week.',
+    'In Mailchimp set <b>To</b> to the saved segment <b>' + segName + '</b>.',
+    'By the ready date, send a test to one contact from each hub (likely Louise, Laura and Anna; check with each team). Ask for feedback during the week.',
     'Make any changes the hubs asked for.',
     'Schedule it for the send date. Tell the hubs it is scheduled so they can adjust their own local sends.'
   ];
   return extra ? extra.concat(s) : s;
 }
-var CHECKTAGS = 'Check that people who registered recently have the host-2027 tag. <span class="how">How: in Mailchimp open Audience, then All contacts, search the email of each of the three most recent registrations, and look under Tags for <b>host-2027</b> and a week tag. Also open Segments, then <b>Hosts 2027 (all)</b>, and compare its count with the number of hosts registered on the website (ask Dan where to find that list). If one is missing, add the tag by hand and tell Dan. <a href="how-to/#check-tags">More detail</a>.</span>';
-
+var CHECKTAGS = 'Check that new registrations are being tagged. <span class="how">In the WordPress admin find the one or two most recent hosts, then look them up in Mailchimp and check each has the tag <b>Host 2027</b>. <a href="how-to/#check-tags">Steps</a>.</span>';
 var EMAILS = [
   { id: 'setup', phase: 'setup', first: true, ready: 'Before Tue 5 Jan', send: 'First task', sub: 'Before anything else. In future years, before 5 Nov.',
     name: 'Set up the 2027 emails in one go', to: null,
@@ -234,7 +236,7 @@ var RESTART = [
   'Replicate last year’s emails into a new folder for the year and put the send dates in their names (before 5 November).',
   'Create the new year tags: host-2028 and week-2028-1 to week-2028-5.',
   'Add host-prior to everyone who has this year’s host tag, so they count as past hosts next year.',
-  'Update the registration tagging (Zapier or whatever replaces it) so new registrants get the new year tag.',
+  'Ask whoever looks after the website to change the registration tag to the new year (it is set in the website code).',
   'Make the new saved segments for the year. Copy the old ones and swap the year tag in each.',
   'Import the first registrants and set Registered and Week(s) in the host list sheet.',
   'Add the new year to the host list sheet Settings tab (festival_year).',

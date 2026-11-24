@@ -83,6 +83,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--ink-soft); }
   <footer>Not answered here? Ask Dan, and the answer gets added to this page.</footer>
 </div>
 
+<script src="../ui.js"></script>
 <script>
 var FAQ = [
  { t: 'Sending', q: 'Why do emails go to a segment and not a tag?', k: 'segment tag send audience recipients',
@@ -94,9 +95,9 @@ var FAQ = [
  { t: 'Sending', q: 'When do I use stop-rego-nudges?', k: 'stop nudges reminders chase register',
    a: '<p>After the February close-soon email, add the tag <b>stop-rego-nudges</b> to anyone you do not want to chase again. It is a fact about them, so it is a tag, and you can leave it off the segment you use next.</p>' },
  { t: 'People and tags', q: 'A host registered but is not in the week segment. What do I check?', k: 'missing week segment tag host-2027 registered zapier not showing',
-   a: '<p>Open the person in Mailchimp and look at their tags. A registered host needs <b>host-2027</b> and a <b>week-2027-N</b> tag for their week.</p><ul><li>If a tag is missing, add it by hand.</li><li>Tell Dan. The tagging at registration may have failed, and it needs fixing so the next person does not miss out.</li></ul>' },
+   a: '<p>Open the person in Mailchimp and look at their tags. The website tags a registered host <b>Host 2027</b>. It does not add a week tag yet, so week segments only include people tagged by hand.</p><ul><li>If a tag is missing, add it by hand.</li><li>Tell Dan. The tagging at registration may have failed, and it needs fixing so the next person does not miss out.</li></ul>' },
  { t: 'People and tags', q: 'What does each tag mean?', k: 'tags glossary host-2027 week interested-host network-amplifier hub-kp host-prior',
-   a: '<ul><li><b>host-2027</b>: registered an event for 2027</li><li><b>week-2027-1 to 5</b>: which festival week their event is in</li><li><b>interested-host</b>: ticked that they are interested in hosting</li><li><b>network-amplifier</b>: shares EcoFest with their network</li><li><b>hub-kp</b>: belongs to the Kaipātiki hub</li><li><b>host-prior</b>: hosted in an earlier year (added at the yearly restart)</li><li><b>stop-rego-nudges</b>: do not send more register-now emails</li></ul>' },
+   a: '<ul><li><b>Host 2027</b>: registered an event for 2027 (added by the website). <b>host-2027</b> is the name the saved segments use until they are changed to match</li><li><b>Event Form</b>: came in through the website registration form</li><li><b>week-2027-1 to 5</b>: which festival week their event is in</li><li><b>interested-host</b>: ticked that they are interested in hosting</li><li><b>network-amplifier</b>: shares EcoFest with their network</li><li><b>hub-kp</b>: belongs to the Kaipātiki hub</li><li><b>host-prior</b>: hosted in an earlier year (added at the yearly restart)</li><li><b>stop-rego-nudges</b>: do not send more register-now emails</li></ul>' },
  { t: 'People and tags', q: 'What is the difference between Update preferences and Unsubscribe?', k: 'unsubscribe preferences opt out leave list group event host festival-goer',
    a: '<p><b>Unsubscribe</b> removes the person from the whole audience, so they also lose the host emails.</p><p><b>Update preferences</b> lets them untick a group. Untick Festival-goer and they stop the public newsletter but stay a host. Untick Event Host and they stop the host emails but keep the newsletter.</p><p>Tell hosts to use Update preferences. The host emails say so.</p>' },
  { t: 'People and tags', q: 'How do I stop a host getting the weekly host emails?', k: 'stop weekly host emails fewer no longer opt out remove as host event host group',
@@ -113,7 +114,7 @@ var FAQ = [
    a: '<p>They are probably on both the regional list and the Kaipātiki list. Mailchimp counts them as two contacts and does not know they are the same person.</p><p>The host list sheet handles this: the <b>In regional list?</b> column shows who is also in the regional audience, and the <b>Audiences</b> tab leaves those people out of the local send, because regional sends its own version.</p>' },
  { t: 'Two lists', q: 'Who gets added to the Kaipātiki list from the regional list?', k: 'hub opt-in kaipatiki add copy regional consent ticked',
    a: '<p>Only people who ticked Kaipātiki on the regional sign-up question “Would you also like email updates from a hub?”. Nobody else from the regional list is copied across.</p>' },
- { t: 'Two lists', q: 'What do I do with the Hub opt-ins to add tab?', k: 'hub opt-ins add paste mark added clear tab',
+ { t: 'Two lists', q: 'What happens with the Hub opt-ins to add tab? (Dan)', k: 'hub opt-ins add paste mark added clear tab',
    a: '<ol><li>Paste the people on that tab into the Kaipātiki Mailchimp. If some are already there with newer details, choose add new only so you do not overwrite them.</li><li>In the sheet use Host list, then Mark hub opt-ins as added. This puts them in Contacts as Active (hub opt-in) and clears the tab.</li></ol><p>Do not clear the tab by hand. If you do, the same people appear again next run because they are not in Contacts yet.</p>' },
  { t: 'Two lists', q: 'Why does the same hub opt-in not come back every week?', k: 'again every week repeat reappear hub opt-in contacts already',
    a: '<p>The tab only lists people who chose Kaipātiki and are not already in Contacts or Suppression. Once you mark them as added they are in Contacts, so they do not show up again. Only new opt-ins appear.</p>' },

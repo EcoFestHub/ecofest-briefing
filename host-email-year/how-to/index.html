@@ -88,13 +88,14 @@ footer { margin-top: 40px; font-size: 13px; color: var(--ink-soft); }
     <div class="body">
       <ol>
         <li>Make the change on the <b>Contacts</b> tab, one cell at a time (email, first name, last name or phone).</li>
-        <li>Open the <b>Updates for Mailchimp</b> tab. A row appears for each person who is on the regional list. People who are not on the regional list do not need passing on.</li>
-        <li>Copy columns <b>A to D</b> (Email, First name, Last name, Phone).</li>
-        <li>In the <b>regional</b> Mailchimp go to Audience, then All contacts, then Add contacts, then Import contacts, then Copy and paste from file. Paste, and match the columns to Email, First name, Last name and Phone.</li>
+        <li>Open the separate <b>Updates for Mailchimp</b> tab. It lists only the people you changed who are on the regional list. It is not the Contacts tab.</li>
+        <li>On that tab, select columns <b>A to D</b> of the rows without a Y, and copy.</li>
+        <li>In the <b>regional</b> Mailchimp (the Mailchimp website, not a sheet tab) go to Audience, All contacts, Add contacts, Import contacts, then the copy and paste option. Paste, and match the columns to Email, First name, Last name and Phone.</li>
         <li>When Mailchimp asks, choose <b>Update existing contacts</b>.</li>
-        <li>If the <b>Old email</b> column has an address, that person changed their email. Mailchimp adds the new address as a new contact, so archive the old one: Audience, All contacts, search the old address, open it and choose Archive.</li>
-        <li>Put <b>Y</b> in the <b>Done</b> column. Later, <b>Host list &gt; Clear finished rows</b> tidies the tab.</li>
+        <li>If the <b>Old email</b> column has an address, that person changed their email. Mailchimp adds the new address as a new contact, so archive the old one: search the old address, open it and choose Archive.</li>
+        <li>Back in the sheet, type <b>Y</b> in the <b>Done</b> column for each row you pasted (type it once and drag it down for several rows). That is the end of the job.</li>
       </ol>
+      <div class="callout">Nothing clears itself. Rows with a Y stay as a record. To tidy them away, choose <b>Host list &gt; Clear finished rows</b> whenever you like.</div>
     </div>
   </details>
 
@@ -127,14 +128,14 @@ footer { margin-top: 40px; font-size: 13px; color: var(--ink-soft); }
   </details>
 
   <details id="hub-opt-ins">
-    <summary>Add the hub opt-ins to the Kaip&#257;tiki list<small>People who ticked Kaip&#257;tiki on the regional sign-up.</small></summary>
+    <summary>Add the hub opt-ins to the Kaip&#257;tiki list (Dan)<small>People who ticked Kaip&#257;tiki on the regional sign-up. Only Dan can sign in to the Kaip&#257;tiki Mailchimp.</small></summary>
     <div class="body">
       <ol>
-        <li>Open the <b>Hub opt-ins to add</b> tab. Each run fills it with people who chose Kaip&#257;tiki and are not on our list yet.</li>
-        <li>Copy them into the Kaip&#257;tiki Mailchimp. If someone is already there with newer details, choose <b>add new only</b> so you do not overwrite them.</li>
-        <li>In the sheet choose <b>Host list &gt; Mark hub opt-ins as added</b>. This puts them in Contacts as Active (hub opt-in) and clears the tab.</li>
+        <li>The Monday run emails Dan the new people, with a table of their email and name. The same people are on the <b>Hub opt-ins to add</b> tab in the sheet.</li>
+        <li>Copy the rows from that tab (or the table in the email) into the Kaip&#257;tiki Mailchimp import. Choose <b>add new only</b>, so newer details already there are not overwritten.</li>
+        <li>Straight afterwards, in the sheet choose <b>Host list &gt; Mark hub opt-ins as added</b>. It moves everyone on the tab into Contacts as Active (hub opt-in) and empties the tab.</li>
       </ol>
-      <div class="callout">Do not clear the tab by hand. The same people would appear again next time.</div>
+      <div class="callout">Do steps 2 and 3 in one sitting. The tab is only refilled when a run happens (Monday, or when someone chooses Run checks), so nobody new slips in between unless a run happens. Do not empty the tab by hand, or the same people come back next time.</div>
     </div>
   </details>
 
@@ -153,26 +154,27 @@ footer { margin-top: 40px; font-size: 13px; color: var(--ink-soft); }
   <h2>Checks</h2>
 
   <details id="check-tags">
-    <summary>Check that recent registrants have the host-2027 tag<small>Before a reminder email goes out.</small></summary>
+    <summary>Check that new registrations are being tagged<small>A quick spot check before a reminder email goes out.</small></summary>
     <div class="body">
+      <p>The website adds the Mailchimp tag when someone registers. This check makes sure that link is still working. If it breaks, people who have registered keep getting reminders, and week emails miss people.</p>
       <ol>
-        <li>Get the email addresses of the three most recent registrations from the website registration list. (Ask Dan where to find that list.)</li>
-        <li>In Mailchimp open <b>Audience</b>, then <b>All contacts</b>, and search for the first address.</li>
-        <li>Open the contact and look under <b>Tags</b>. You should see <b>host-2027</b> and a week tag such as <b>week-2027-3</b>.</li>
-        <li>Repeat for the other two.</li>
-        <li>Also open <b>Audience</b>, then <b>Segments</b>, then <b>Hosts 2027 (all)</b>. Compare its count with the number of hosts registered on the website. They should match or be very close.</li>
-        <li>If a tag is missing, open the contact, choose <b>Add tag</b>, and add it by hand. Then tell Dan, because the tagging at registration may have failed.</li>
+        <li>In the WordPress admin, open <b>Events</b> and find the one or two most recent registrations. Note each host's email address.</li>
+        <li>In Mailchimp open <b>Audience</b>, then <b>All contacts</b>, and search for the address.</li>
+        <li>Open the contact and look under <b>Tags</b> for <b>Host 2027</b> (and <b>Event Form</b>). The website does not add a week tag yet.</li>
+        <li>If a tag is missing, add it by hand and tell Dan.</li>
       </ol>
     </div>
   </details>
 
-  <details id="check-segment">
-    <summary>Check a Mailchimp segment has the right people</summary>
+  <details id="to-check">
+    <summary>Sort out the contacts marked To check<small>People nobody has decided about yet. They are not emailed until someone does.</small></summary>
     <div class="body">
       <ol>
-        <li>In Mailchimp open <b>Audience</b>, then <b>Segments</b>.</li>
-        <li>Click the segment. The count and a sample of contacts show.</li>
-        <li>Does the count look sensible? Open a couple of contacts from the sample and check their tags match the segment's rule.</li>
+        <li>In the sheet open the <b>Contacts</b> tab.</li>
+        <li>Click the filter button on the <b>Local status</b> heading and show only <b>To check</b>.</li>
+        <li>Read the notes columns for each person.</li>
+        <li>Pick from the drop-down: <b>Active</b> (we should email them), <b>Asked off</b> (they asked not to be emailed) or <b>Removed</b> (gone, or the address is dead). If you do not know, leave it as To check.</li>
+        <li>Clear the filter when you are done.</li>
       </ol>
     </div>
   </details>
@@ -181,17 +183,18 @@ footer { margin-top: 40px; font-size: 13px; color: var(--ink-soft); }
     <summary>Every Monday: the weekly check<small>When the summary email arrives.</small></summary>
     <div class="body">
       <ol>
-        <li>Open the weekly summary email and the host list sheet.</li>
-        <li>If the <b>Hub opt-ins to add</b> tab has people, add them (see above).</li>
-        <li>If the <b>Updates for Mailchimp</b> tab has rows without a Y, pass them on (see above).</li>
-        <li>Look through any <b>To check</b> rows on the Contacts tab and give each a status.</li>
-        <li>If the email says there is a problem, tell Dan.</li>
+        <li>Read the summary email. It gives counts, not names.</li>
+        <li>If corrections are waiting, follow <a href="#send-changes">Pass my changes on to Mailchimp</a>.</li>
+        <li>If there are To check contacts, follow <a href="#to-check">Sort out the contacts marked To check</a>.</li>
+        <li>Hub opt-ins are Dan's job. He gets his own email.</li>
+        <li>If the email reports a problem, tell Dan.</li>
       </ol>
     </div>
   </details>
 
   <footer>Not here? Ask Dan, and it will be added. The <a href="../questions/">Questions</a> page answers short questions in plain words.</footer>
 </div>
+<script src="../ui.js"></script>
 <script>
 // Open the block named in the address (for example #bounces) so links from other pages land on it.
 function openHash() {
